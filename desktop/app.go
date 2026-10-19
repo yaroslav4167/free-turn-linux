@@ -26,7 +26,6 @@ type App struct {
 	ctx    context.Context
 	store  *backend.Store
 	engine *backend.Engine
-	tray   interface{ Close() }
 }
 
 func NewApp() *App {
@@ -45,10 +44,6 @@ func (a *App) startup(ctx context.Context) {
 }
 
 func (a *App) shutdown(ctx context.Context) {
-	if a.tray != nil {
-		a.tray.Close()
-		a.tray = nil
-	}
 	a.engine.Disconnect()
 }
 
@@ -58,11 +53,6 @@ func (a *App) setupProgress(line string) {
 	if a.ctx != nil {
 		wailsruntime.EventsEmit(a.ctx, eventSetupProgress, line)
 	}
-}
-
-// Unexport from Wails binding
-func (a *App) setTray(t interface{ Close() }) {
-	a.tray = t
 }
 
 func (a *App) ShowWindow() {
@@ -157,7 +147,7 @@ func (a *App) CoreVersion() string {
 }
 
 // VPNAvailable reports whether this build can run the embedded, one-click
-// VPN mode (true on Windows) as opposed to relay-only.
+// VPN mode (true on Linux and Windows) as opposed to relay-only.
 func (a *App) VPNAvailable() bool {
 	return wintunnel.Available()
 }

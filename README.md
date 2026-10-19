@@ -1,108 +1,53 @@
-<div align="center">
+# FreeTurn for Linux
 
-<img src="logo.webp" height="250">
+Графический клиент [free-turn-proxy](https://github.com/purkalolka/free-turn-proxy) для Linux на Go, Wails 2 и React. Клиент поддерживает реле для внешнего WireGuard/AmneziaWG и встроенный VPN одной кнопкой.
 
-# FreeTurn for Windows
+## Поддерживаемые системы
 
-![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
-![Wails](https://img.shields.io/badge/UI-Wails%20v2%20%7C%20React%2019-DF0000?style=flat-square&logo=wails&logoColor=white)
-![Go](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go&logoColor=white)
-![License](https://img.shields.io/badge/license-Happy_Bunny-ff69b4?style=flat-square&logoColor=white)
+- Ubuntu 22.04+ и Debian 12+ с WebKit2GTK 4.1.
+- Arch Linux и совместимые дистрибутивы с WebKit2GTK 4.1.
 
-**FreeTurn Windows Client** — графический клиент обхода блокировок и цензуры на базе инкапсуляции трафика через TURN/WebRTC протоколы с полноценной поддержкой системного VPN (Wintun / WireGuard / AmneziaWG).
+Готовый архив релиза содержит клиент `freeturn-desktop`, консольные `client` и `server`, а также `freeturn.desktop`. После распаковки запустите `./freeturn-desktop`. Для пункта в меню установите клиент в каталог из `PATH` и скопируйте `freeturn.desktop` в `~/.local/share/applications/`.
 
-[**Скачать релиз (v1.0.3)**](https://github.com/purkalolka/free-turn-windows/releases/latest)
+Для работы окна нужны GTK3 и WebKit2GTK 4.1. Для уведомлений о капче используется `notify-send` (`libnotify-bin` в Debian/Ubuntu, `libnotify` в Arch).
 
-</div>
+В режиме VPN нужны `/dev/net/tun`, `ip` из `iproute2`, `pkexec` с работающим Polkit-агентом и `systemd-resolved` для настройки DNS из WireGuard-конфига. Приложение остаётся запущенным от обычного пользователя. После подтверждения Polkit оно запускает отдельный привилегированный процесс для создания TUN и настройки сети.
 
----
+### Зависимости для запуска
 
-## Возможности
+Ubuntu/Debian:
 
-- 🚀 **Полноценный системный VPN**: создание виртуального адаптера Wintun и перенаправление всего системного трафика (WireGuard / AmneziaWG) через защищенный релей.
-- 🛡️ **Обход блокировок и DPI**: маскировка UDP/TCP трафика под WebRTC/TURN соединения и звонки, шифрование DTLS/TLS и обфускация пакетов (`rtpopus`, `rtpopus2`, `rtpopus3`, `shape`).
-- 🔗 **Поддержка ссылок подключения**: мгновенный импорт конфигураций по ссылке `freeturn://` или прямых конфигов WireGuard/AmneziaWG (`.conf`).
-- 🖥️ **Управление серверами**: встроенный мастер настройки и развертывания своего сервера на VPS через SSH в один клик, управление пирами и экспорт ссылок.
-- 📦 **Встроенный Wintun драйвер**: драйвер `wintun.dll` встроен в клиент и автоматически распаковывается при необходимости.
-
----
-
-## Улучшения и исправления в ядре (free-turn-proxy v3.4.1)
-
-Клиент синхронизирован с обновленным и прошедшим аудит безопасности ядром **[free-turn-proxy v3.4.1](https://github.com/purkalolka/free-turn-proxy)**:
-
-1. **Авторизация VK Calls без капчи**:
-   - Официальный мобильный клиентский ID (`client_id=8093730`) для методов `auth.getAnonymToken` и `messages.getAnonymCallToken`.
-   - Поддержка полей `token` и `user_token` в ответах API гарантирует получение TURN-учетных данных без запроса капчи.
-
-2. **DTLS Certificate Pinning (Защита от MITM)**:
-   - Проверка SHA-256 отпечатка сертификата сервера (`sha256:...`) на стороне клиента для исключения атак подмены сервера или перехвата сессии.
-   - Поддержка отпечатка в ссылках конфигурации `freeturn://` (параметр `fp`), в профилях серверов и в CLI (`-dtls-fingerprint`).
-   - Автоматическая генерация и сохранение постоянного самоподписанного сертификата на сервере (`LoadOrGenerateCert`).
-
-3. **Защита от атак повтора (Anti-Replay Window)**:
-   - 128-битный скользящий фильтр повторов (RFC 6479 / RFC 4303) в протоколах обфускации RTP Opus (`rtpopus`, `rtpopus2`, `rtpopus3`).
-   - Предварительная проверка последовательности пакетов до AEAD дешифровки для защиты от DoS и replay-атак.
-
-4. **Безопасные права доступа (Chmod 0600)**:
-   - Файлы сохраненных профилей, учетных данных и приватных ключей сохраняются с безопасными правами `0600` (`-rw-------`).
-
-5. **Отказоустойчивое управление сервером (Server Control)**:
-   - Скрипты развертывания сервера по SSH переключены на защищенный репозиторий `https://github.com/purkalolka/free-turn-proxy`.
-   - Внедрен механизм повторных попыток (retries/backoff) с таймаутами при скачивании бинарников и обязательная сверка контрольных сумм SHA-256.
-   - Улучшена обработка системных блокировок пакетных менеджеров (APT, YUM/DNF, APK).
-
----
-
-## Быстрый старт
-
-### 1. Установка
-1. Перейдите в [**Releases**](https://github.com/purkalolka/free-turn-windows/releases/latest) и скачайте архив `FreeTurn-Windows-Portable-v1.0.3.zip`.
-2. Распакуйте архив в любую удобную папку на компьютере.
-
-### 2. Запуск
-> ⚠️ **Важно:** Для создания виртуального сетевого адаптера Wintun и настройки системных маршрутов требуются права администратора.
-
-- Запустите **`Run_Admin.bat`** (или нажмите правой кнопкой мыши по **`FreeTurn.exe`** ➔ **«Запуск от имени администратора»**).
-
-### 3. Подключение
-1. Вставьте ссылку конфигурации формата `freeturn://...` в поле добавления или импортируйте свой WireGuard `.conf`.
-2. В выпадающем списке режима переключите на **VPN** для перенаправления всего трафика через туннель.
-3. Нажмите кнопку **Подключиться**.
-
----
-
-## Сборка из исходников
-
-### Требования
-- **Go** ≥ 1.26
-- **Node.js** ≥ 18 + **npm**
-- **Wails CLI v2**:
-  ```bash
-  go install github.com/wailsapp/wails/v2/cmd/wails@latest
-  ```
-
-### Сборка приложения
-```bash
-# Переходим в каталог desktop
-cd desktop
-
-# Установка зависимостей фронтенда
-npm --prefix frontend install
-
-# Сборка production-бинарника (с обязательным флагом -checklinkname=0)
-wails build -ldflags "-checklinkname=0 -s -w" -trimpath
-```
-Готовый исполняемый файл будет доступен в `desktop/build/bin/freeturn-desktop.exe`.
-
-### Запуск в dev-режиме
-```bash
-cd desktop
-wails dev
+```sh
+sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 iproute2 polkitd systemd-resolved libnotify-bin
 ```
 
----
+Arch:
 
-## Благодарности
-- Ядро прокси: [Free Turn Proxy](https://github.com/purkalolka/free-turn-proxy)
-- Разработчикам Wails, Wintun и сообществу.
+```sh
+sudo pacman -S gtk3 webkit2gtk-4.1 iproute2 polkit systemd libnotify
+```
+
+Проверьте, что служба `systemd-resolved` работает, если в конфиге WireGuard заданы DNS-серверы. На дистрибутивах с другим DNS-менеджером режим реле работает без этого требования; встроенный VPN сообщит об ошибке настройки DNS и вернёт сетевые маршруты.
+
+## Подключение
+
+1. Добавьте сервер по ссылке `freeturn://` или настройте свой VPS через мастер в приложении.
+2. Если у профиля есть WireGuard-конфиг, выберите «VPN (одна кнопка)» и нажмите «Включить VPN». Polkit запросит права на настройку сети.
+3. В режиме «Реле» запустите подключение в FreeTurn и направьте внешний WireGuard/AmneziaWG-клиент на указанный локальный порт.
+
+Встроенный VPN запускает реле на обычном интернет-соединении и добавляет маршруты через TUN только после установки соединения. При отключении и при неожиданном завершении окна привилегированный процесс снимает маршруты и DNS с созданного интерфейса. Закрытие окна завершает приложение и VPN.
+
+## Сборка
+
+Требуются Go 1.26+, Node.js 18+, npm, C-компилятор, заголовки GTK3 и WebKit2GTK 4.1. На Ubuntu/Debian установите `libgtk-3-dev libwebkit2gtk-4.1-dev`; на Arch используйте `gtk3 webkit2gtk-4.1 base-devel`.
+
+```sh
+go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0
+npm --prefix desktop/frontend ci
+cd desktop
+wails build -tags webkit2_41 -ldflags "-checklinkname=0 -s -w" -trimpath
+```
+
+Исполняемый файл появится в `desktop/build/bin/freeturn-desktop`. Для разработки используйте `wails dev -tags webkit2_41`. Команда `task build` собирает консольные `client` и `server` в `dist/`.
+
+Go-модуль намеренно сохраняет имя `github.com/samosvalishe/free-turn-proxy`, чтобы не менять импорты ядра и существующие инструменты. Источник Linux-клиента отделён от [Windows-клиента](https://github.com/purkalolka/free-turn-windows); серверная часть и протокол совместимы.

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=FreeTurn
+Comment=TURN-based VPN and relay client
+Exec=freeturn-desktop
+Icon=network-vpn
+Terminal=false
+Categories=Network;Security;

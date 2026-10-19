@@ -1,20 +1,28 @@
 package main
 
 import (
-	"context"
 	"embed"
+	"fmt"
+	"os"
 
-	"github.com/samosvalishe/free-turn-proxy/desktop/tray"
+	"github.com/samosvalishe/free-turn-proxy/desktop/backend/wintunnel"
+
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
 func main() {
+	if len(os.Args) == 3 && os.Args[1] == "--vpn-helper" {
+		if err := wintunnel.RunHelper(os.Args[2]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	// Create an instance of the app structure
 	app := NewApp()
 
@@ -25,28 +33,13 @@ func main() {
 		Height:            780,
 		MinWidth:          900,
 		MinHeight:         600,
-		HideWindowOnClose: true,
+		HideWindowOnClose: false,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup: func(ctx context.Context) {
-			app.startup(ctx)
-			t, terr := tray.Start(
-				"FreeTurn Desktop",
-				func() {
-					wailsruntime.WindowShow(ctx)
-					wailsruntime.WindowUnminimise(ctx)
-				},
-				func() {
-					wailsruntime.Quit(ctx)
-				},
-			)
-			if terr == nil && t != nil {
-				app.setTray(t)
-			}
-		},
-		OnShutdown: app.shutdown,
+		OnStartup:        app.startup,
+		OnShutdown:       app.shutdown,
 		Bind: []interface{}{
 			app,
 		},
