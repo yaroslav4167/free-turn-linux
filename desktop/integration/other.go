@@ -1,0 +1,17 @@
+//go:build !linux
+
+package integration
+
+import "errors"
+
+const Supported = false
+
+func VPNHelperAvailable() bool { return false }
+func ConfigureVPNHelper(remove bool) error {
+	return errors.New("system VPN helper is only supported on Linux")
+}
+
+func InstalledPath() (string, error)  { return "", nil }
+func Install() (string, error)        { return "", errors.New("installation is only supported on Linux") }
+func AutostartEnabled() (bool, error) { return false, nil }
+func SetAutostart(enabled bool) error { return errors.New("autostart is only supported on Linux") }

@@ -252,6 +252,35 @@ export namespace backend {
 
 }
 
+export namespace main {
+	
+	export class DesktopSettings {
+	    closeToTray: boolean;
+	    autostart: boolean;
+	    supported: boolean;
+	    trayAvailable: boolean;
+	    trayError: string;
+	    installedPath: string;
+	    vpnHelperAvailable: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new DesktopSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.closeToTray = source["closeToTray"];
+	        this.autostart = source["autostart"];
+	        this.supported = source["supported"];
+	        this.trayAvailable = source["trayAvailable"];
+	        this.trayError = source["trayError"];
+	        this.installedPath = source["installedPath"];
+	        this.vpnHelperAvailable = source["vpnHelperAvailable"];
+	    }
+	}
+
+}
+
 export namespace serversetup {
 	
 	export class InstallResult {

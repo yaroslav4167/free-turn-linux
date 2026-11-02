@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend"
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/serversetup"
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/wintunnel"
+	"github.com/samosvalishe/free-turn-proxy/desktop/integration"
+	"github.com/samosvalishe/free-turn-proxy/desktop/tray"
 	"github.com/samosvalishe/free-turn-proxy/internal/wire/rtpopus"
 	"github.com/samosvalishe/free-turn-proxy/mobile"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -23,9 +26,14 @@ var errNoSSHConfig = errors.New("для этого сервера нет сох�
 // App is the Wails-bound facade the frontend calls into. It stays thin - all
 // real logic lives in backend, so it can be unit-tested without a Wails runtime.
 type App struct {
-	ctx    context.Context
-	store  *backend.Store
-	engine *backend.Engine
+	ctx         context.Context
+	store       *backend.Store
+	engine      *backend.Engine
+	desktopMu   sync.Mutex
+	preferences integration.Preferences
+	tray        *tray.Tray
+	trayError   string
+	quitting    bool
 }
 
 func NewApp() *App {
@@ -35,16 +43,24 @@ func NewApp() *App {
 		// fix from inside the app, so fail fast rather than run half-alive.
 		panic(fmt.Errorf("open server store: %w", err))
 	}
-	return &App{store: store, engine: backend.NewEngine(store)}
+	prefs, err := integration.LoadPreferences()
+	if err != nil {
+		prefs = integration.Preferences{CloseToTray: false}
+	}
+	return &App{store: store, engine: backend.NewEngine(store), preferences: prefs}
 }
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.engine.SetContext(ctx)
+	a.startTray()
 }
 
 func (a *App) shutdown(ctx context.Context) {
 	a.engine.Disconnect()
+	if a.tray != nil {
+		a.tray.Close()
+	}
 }
 
 // setupProgress forwards one progress line from a running server-side job to
@@ -63,6 +79,9 @@ func (a *App) ShowWindow() {
 }
 
 func (a *App) Quit() {
+	a.desktopMu.Lock()
+	a.quitting = true
+	a.desktopMu.Unlock()
 	if a.ctx != nil {
 		wailsruntime.Quit(a.ctx)
 	}

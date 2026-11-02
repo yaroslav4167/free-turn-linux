@@ -7,21 +7,21 @@ interface Props {
   activeServerId: string
   onSelect: (id: string) => void
   onAdd: () => void
-  version: string
 }
 
-export default function Sidebar({servers, selectedId, activeState, activeServerId, onSelect, onAdd, version}: Props) {
+export default function Sidebar({servers, selectedId, activeState, activeServerId, onSelect, onAdd}: Props) {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <h1>FreeTurn Desktop</h1>
-        <span className="version">core {version || '...'}</span>
+        <h1>Серверы</h1>
+        <span className="version">Профили подключения · {servers.length}</span>
       </div>
       <div className="server-list">
         {servers.map((s) => {
           const isActive = s.id === activeServerId && activeState !== 'idle'
           return (
-            <div
+            <button
+              type="button"
               key={s.id}
               className={'server-item' + (s.id === selectedId ? ' active' : '')}
               onClick={() => onSelect(s.id)}
@@ -31,7 +31,7 @@ export default function Sidebar({servers, selectedId, activeState, activeServerI
                 {s.name || s.peer || 'Без имени'}
                 <span className="peer">{s.peer}</span>
               </span>
-            </div>
+            </button>
           )
         })}
         {servers.length === 0 && (

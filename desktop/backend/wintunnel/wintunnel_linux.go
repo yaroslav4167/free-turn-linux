@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	amtun "github.com/amnezia-vpn/amneziawg-go/v3/tun"
 	"golang.org/x/sys/unix"
@@ -15,7 +14,6 @@ import (
 )
 
 const DefaultMTU = 1280
-const connectTimeout = 45 * time.Second
 
 var mu sync.Mutex
 var active *helperClient
@@ -132,24 +130,5 @@ func Disconnect() {
 	mobile.SetProtect(nil)
 	if client != nil {
 		client.Close()
-	}
-}
-
-func waitConnected(timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	for {
-		s := mobile.GetState()
-		switch s.State {
-		case mobile.StateConnected:
-			return nil
-		case mobile.StateError:
-			return fmt.Errorf("VPN session failed: %s", s.ErrMsg)
-		case mobile.StateIdle:
-			return errors.New("VPN session stopped before connecting")
-		}
-		if time.Now().After(deadline) {
-			return fmt.Errorf("VPN did not connect within %s", timeout)
-		}
-		time.Sleep(300 * time.Millisecond)
 	}
 }

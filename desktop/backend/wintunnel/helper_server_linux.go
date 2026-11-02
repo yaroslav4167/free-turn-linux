@@ -10,9 +10,12 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/sys/unix"
 
@@ -37,13 +40,24 @@ func RunHelper(socketPath string) error {
 		return err
 	}
 	defer func() { _ = conn.Close() }()
-	reader := bufio.NewReader(conn)
+	return serveHelper(conn)
+}
+
+func serveHelper(conn *net.UnixConn) error {
+	// Bound initialization and request size even for an authorized local peer.
+	if err := conn.SetReadDeadline(time.Now().Add(10 * time.Second)); err != nil {
+		return err
+	}
+	reader := bufio.NewReaderSize(conn, 64*1024+1)
 	var initReq helperRequest
 	if readErr := readRequest(reader, &initReq); readErr != nil {
 		return readErr
 	}
 	if initReq.Op != "init" || initReq.Params == nil {
 		return errors.New("invalid VPN initialization request")
+	}
+	if err := conn.SetReadDeadline(time.Time{}); err != nil {
+		return err
 	}
 	state, tunFD, err := prepareHelper(initReq.Params)
 	if err != nil {
@@ -84,7 +98,7 @@ func RunHelper(socketPath string) error {
 }
 
 func readRequest(reader *bufio.Reader, req *helperRequest) error {
-	line, err := reader.ReadBytes('\n')
+	line, err := reader.ReadSlice('\n')
 	if err != nil {
 		return err
 	}
@@ -97,6 +111,17 @@ func readRequest(reader *bufio.Reader, req *helperRequest) error {
 func prepareHelper(params *mobile.TunnelParams) (*helperState, int, error) {
 	if params.MTU < 576 || params.MTU > 9000 {
 		return nil, -1, fmt.Errorf("invalid tunnel MTU %d", params.MTU)
+	}
+	addresses, err := parsePrefixes(params.Addresses)
+	if err != nil {
+		return nil, -1, err
+	}
+	if len(addresses) == 0 {
+		return nil, -1, errors.New("WireGuard config has no interface address")
+	}
+	allowed, err := parsePrefixes(params.AllowedIPs)
+	if err != nil {
+		return nil, -1, err
 	}
 	dev4, gw4, err := physicalRoute("-4", "1.1.1.1")
 	if err != nil {
@@ -119,18 +144,25 @@ func prepareHelper(params *mobile.TunnelParams) (*helperState, int, error) {
 	}
 	name := ifr.Name()
 	state := &helperState{name: name, dev4: dev4, dev6: dev6, gw4: gw4}
+	// A new TUN inherits default.disable_ipv6. Enable IPv6 on this link
+	// even for IPv4-only interface addresses when AllowedIPs includes IPv6.
+	// Do not skip IPv6 routes: that could send traffic outside the VPN.
+	for _, prefixes := range [][]netip.Prefix{addresses, allowed} {
+		needsIPv6 := false
+		for _, prefix := range prefixes {
+			needsIPv6 = needsIPv6 || prefix.Addr().Is6()
+		}
+		if needsIPv6 {
+			if err := enableIPv6(filepath.Join("/proc/sys/net/ipv6/conf", name, "disable_ipv6")); err != nil {
+				_ = unix.Close(fd)
+				return nil, -1, fmt.Errorf("enable IPv6 on VPN interface %s: %w", name, err)
+			}
+			break
+		}
+	}
 	if linkErr := runIP("link", "set", "dev", name, "mtu", strconv.Itoa(params.MTU), "up"); linkErr != nil {
 		_ = unix.Close(fd)
 		return nil, -1, linkErr
-	}
-	addresses, err := parsePrefixes(params.Addresses)
-	if err != nil {
-		_ = unix.Close(fd)
-		return nil, -1, err
-	}
-	if len(addresses) == 0 {
-		_ = unix.Close(fd)
-		return nil, -1, errors.New("WireGuard config has no interface address")
 	}
 	for _, address := range addresses {
 		if err := runIP(familyFlag(address), "addr", "add", address.String(), "dev", name); err != nil {
@@ -139,6 +171,17 @@ func prepareHelper(params *mobile.TunnelParams) (*helperState, int, error) {
 		}
 	}
 	return state, fd, nil
+}
+
+func enableIPv6(sysctlPath string) error {
+	value, err := os.ReadFile(sysctlPath)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(string(value)) == "0" {
+		return nil
+	}
+	return os.WriteFile(sysctlPath, []byte("0\n"), 0o644)
 }
 
 func (s *helperState) installRoutes(params *mobile.TunnelParams, exclusions []string) error {

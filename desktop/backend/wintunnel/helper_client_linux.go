@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/exec"
@@ -16,6 +17,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
+	"github.com/samosvalishe/free-turn-proxy/desktop/backend/vpnservice"
 	"github.com/samosvalishe/free-turn-proxy/mobile"
 )
 
@@ -32,17 +34,41 @@ type helperReply struct {
 }
 
 type helperClient struct {
-	conn   *net.UnixConn
-	mu     sync.Mutex
-	exited <-chan struct{}
+	conn    *net.UnixConn
+	mu      sync.Mutex
+	exited  <-chan struct{}
+	replies <-chan helperReply
+}
+
+func newHelperClient(conn *net.UnixConn) *helperClient {
+	exited := make(chan struct{})
+	replies := make(chan helperReply, 1)
+	client := &helperClient{conn: conn, exited: exited, replies: replies}
+	go func() {
+		defer close(exited)
+		defer close(replies)
+		decoder := json.NewDecoder(conn)
+		for {
+			var reply helperReply
+			if err := decoder.Decode(&reply); err != nil {
+				return
+			}
+			replies <- reply
+		}
+	}()
+	return client
 }
 
 func (c *helperClient) Close() {
-	_ = c.conn.Close()
+	// EOF requests cleanup, while the read side stays open until the helper
+	// has restored routes/DNS and closed its endpoint. This also works when
+	// systemd, rather than pkexec, owns the helper process.
+	_ = c.conn.CloseWrite()
 	select {
 	case <-c.exited:
 	case <-time.After(10 * time.Second):
 	}
+	_ = c.conn.Close()
 }
 
 func (c *helperClient) call(req helperRequest) error {
@@ -51,9 +77,9 @@ func (c *helperClient) call(req helperRequest) error {
 	if err := json.NewEncoder(c.conn).Encode(req); err != nil {
 		return err
 	}
-	var reply helperReply
-	if err := json.NewDecoder(c.conn).Decode(&reply); err != nil {
-		return err
+	reply, ok := <-c.replies
+	if !ok {
+		return io.EOF
 	}
 	if reply.Error != "" {
 		return errors.New(reply.Error)
@@ -62,6 +88,15 @@ func (c *helperClient) call(req helperRequest) error {
 }
 
 func startHelper(params *mobile.TunnelParams) (*helperClient, int, string, string, error) {
+	// A system-installed helper is trusted root-owned code, not a passwordless
+	// execution permission for a replaceable binary in the user's home.
+	service, err := net.DialUnix("unix", nil, &net.UnixAddr{Name: vpnservice.SocketPath(os.Getuid()), Net: "unix"})
+	if err == nil {
+		return initializeHelper(service, params)
+	}
+	if !errors.Is(err, os.ErrNotExist) && !errors.Is(err, unix.ECONNREFUSED) {
+		return nil, -1, "", "", fmt.Errorf("connect system VPN helper: %w", err)
+	}
 	if _, err := exec.LookPath("pkexec"); err != nil {
 		return nil, -1, "", "", errors.New("polkit (pkexec) is required for one-click VPN")
 	}
@@ -116,6 +151,14 @@ func startHelper(params *mobile.TunnelParams) (*helperClient, int, string, strin
 		_ = cmd.Process.Kill()
 		return nil, -1, "", "", errors.New("VPN authorization timed out")
 	}
+	return initializeHelper(conn, params)
+}
+
+func initializeHelper(conn *net.UnixConn, params *mobile.TunnelParams) (*helperClient, int, string, string, error) {
+	if err := conn.SetDeadline(time.Now().Add(15 * time.Second)); err != nil {
+		_ = conn.Close()
+		return nil, -1, "", "", err
+	}
 	// The helper must actually be privileged; a local process must not be able
 	// to impersonate it on the temporary socket.
 	if peerErr := requireRootPeer(conn); peerErr != nil {
@@ -149,13 +192,26 @@ func startHelper(params *mobile.TunnelParams) (*helperClient, int, string, strin
 	}
 	fds, err := unix.ParseUnixRights(&msgs[0])
 	if err != nil || len(fds) != 1 {
+		for _, fd := range fds {
+			_ = unix.Close(fd)
+		}
 		_ = conn.Close()
 		return nil, -1, "", "", errors.New("invalid TUN descriptor from VPN helper")
 	}
-	return &helperClient{conn: conn, exited: exited}, fds[0], reply.Dev4, reply.Dev6, nil
+	unix.CloseOnExec(fds[0])
+	if err := conn.SetDeadline(time.Time{}); err != nil {
+		_ = unix.Close(fds[0])
+		_ = conn.Close()
+		return nil, -1, "", "", err
+	}
+	return newHelperClient(conn), fds[0], reply.Dev4, reply.Dev6, nil
 }
 
 func requireRootPeer(conn *net.UnixConn) error {
+	return requirePeerUID(conn, 0)
+}
+
+func requirePeerUID(conn *net.UnixConn, uid uint32) error {
 	raw, err := conn.SyscallConn()
 	if err != nil {
 		return err
@@ -167,8 +223,8 @@ func requireRootPeer(conn *net.UnixConn) error {
 	if err != nil {
 		return err
 	}
-	if peer == nil || peer.Uid != 0 {
-		return errors.New("VPN helper was not started as root")
+	if peer == nil || peer.Uid != uid {
+		return fmt.Errorf("unauthorized VPN socket peer (expected UID %d)", uid)
 	}
 	return nil
 }

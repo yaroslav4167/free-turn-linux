@@ -366,6 +366,8 @@ func Start(title string, onShow func(), onQuit func()) (*Tray, error) {
 	return tray, nil
 }
 
+func (t *Tray) Available() bool { return t != nil && t.hwnd != 0 }
+
 // Close removes the tray icon and terminates the tray window and message loop.
 func (t *Tray) Close() {
 	t.closeOnce.Do(func() {

@@ -1,14 +1,38 @@
 import {useEffect, useMemo, useState} from 'react'
-import {backend, Connect, CoreVersion, DeleteServer, Disconnect, EventsOff, EventsOn, ListServers, SaveServer, Status} from './api'
+import {
+  backend,
+  Connect,
+  CoreVersion,
+  DeleteServer,
+  Disconnect,
+  EventsOff,
+  EventsOn,
+  ListServers,
+  SaveServer,
+  Status,
+} from './api'
 import Sidebar from './components/Sidebar'
 import ServerDetail from './components/ServerDetail'
 import AddServerModal from './components/AddServerModal'
-import {LogEntry} from './components/LogConsole'
+import LogConsole, {LogEntry} from './components/LogConsole'
+import Navigation, {View} from './components/Navigation'
+import Connection from './components/Connection'
+import DesktopPreferences from './components/DesktopPreferences'
+import {watchStatus} from './status'
+import {EMPTY_TRAFFIC_HISTORY, recordTraffic} from './trafficHistory'
 
 const MAX_LOG_LINES = 500
 
 const IDLE_STATUS: backend.Status = {
-  state: 'idle', streams: 0, total: 0, errMsg: '', txRate: 0, rxRate: 0, txTotal: 0, rxTotal: 0, serverId: '',
+  state: 'idle',
+  streams: 0,
+  total: 0,
+  errMsg: '',
+  txRate: 0,
+  rxRate: 0,
+  txTotal: 0,
+  rxTotal: 0,
+  serverId: '',
 }
 
 function sameServer(a: backend.Server | null, b: backend.Server | null): boolean {
@@ -27,28 +51,47 @@ export default function App() {
   const [version, setVersion] = useState('')
   const [connectError, setConnectError] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const [view, setView] = useState<View>('connect')
+  const [pending, setPending] = useState(false)
+  const [trafficHistory, setTrafficHistory] = useState(EMPTY_TRAFFIC_HISTORY)
 
   useEffect(() => {
-    ListServers().then((list) => {
-      setServers(list)
-      if (list.length > 0) setSelectedId(list[0].id)
-    })
-    CoreVersion().then(setVersion)
-    Status().then(setStatus)
+    setTrafficHistory((history) => recordTraffic(history, status, performance.now()))
+  }, [status])
 
-    const offState = EventsOn('core:state', (s: backend.Status) => setStatus(s))
+  useEffect(() => {
+    ListServers()
+      .then((list) => {
+        setServers(list)
+        const last = localStorage.getItem('freeturn:selected-server')
+        if (list.length > 0) setSelectedId(list.find((s) => s.id === last)?.id ?? list[0].id)
+      })
+      .catch((e) => setConnectError(String(e)))
+    CoreVersion().then(setVersion)
+    const offState = watchStatus(
+      Status,
+      (listener) => {
+        const offLifecycle = EventsOn('core:state', (status: backend.Status) => listener(status))
+        const offStats = EventsOn('core:stats', (status: backend.Status) => listener(status, true))
+        return () => {
+          offLifecycle()
+          offStats()
+        }
+      },
+      setStatus,
+    )
     const offLog = EventsOn('core:log', (l: LogEntry) =>
       setLogs((prev) => {
         const next = [...prev, l]
         return next.length > MAX_LOG_LINES ? next.slice(next.length - MAX_LOG_LINES) : next
-      })
+      }),
     )
     const offCaptcha = EventsOn('core:captcha', (url: string) => setCaptchaUrl(url))
     return () => {
       offState()
       offLog()
       offCaptcha()
-      EventsOff('core:state', 'core:log', 'core:captcha')
+      EventsOff('core:state', 'core:stats', 'core:log', 'core:captcha')
     }
   }, [])
 
@@ -60,6 +103,13 @@ export default function App() {
 
   const savedSelected = useMemo(() => servers.find((s) => s.id === selectedId) ?? null, [servers, selectedId])
   const dirty = !sameServer(draft, savedSelected)
+
+  const selectServer = (id: string) => {
+    if (id === selectedId) return
+    if (dirty && !window.confirm('Несохранённые изменения будут потеряны. Продолжить?')) return
+    setSelectedId(id)
+    localStorage.setItem('freeturn:selected-server', id)
+  }
 
   const handleSave = async () => {
     if (!draft) return
@@ -77,66 +127,112 @@ export default function App() {
   }
 
   const handleConnect = async () => {
-    if (!draft) return
+    if (!draft || pending) return
     setConnectError('')
+    setPending(true)
     try {
+      if (dirty) await handleSave()
       // Connect always force-stops whatever was running first (a different
       // server, or a stuck half-failed attempt on this one), so no need to
       // orchestrate a separate Disconnect from here.
       await Connect(draft.id)
     } catch (e) {
       setConnectError(String(e))
+    } finally {
+      setPending(false)
     }
   }
 
   const handleDisconnect = () => {
-    Disconnect()
+    Disconnect().catch((e) => setConnectError(String(e)))
   }
 
   return (
     <div className="app-shell">
-      <Sidebar
-        servers={servers}
-        selectedId={selectedId}
-        activeState={status.state}
-        activeServerId={status.serverId}
-        onSelect={setSelectedId}
-        onAdd={() => setShowAdd(true)}
-        version={version}
-      />
-      <div className="main">
-        {!draft ? (
-          <div className="empty-state">
-            <p>Выберите сервер слева или добавьте новый, чтобы подключиться через free-turn-proxy.</p>
+      <Navigation view={view} onChange={setView} version={version} />
+      <main className="workspace">
+        {connectError && (
+          <div className="app-error notice error" role="alert">
+            <span>{connectError}</span>
+            <button className="btn small ghost" onClick={() => setConnectError('')} aria-label="Закрыть сообщение">
+              ×
+            </button>
           </div>
-        ) : (
-          <ServerDetail
-            server={draft}
-            dirty={dirty}
+        )}
+        {view === 'connect' && (
+          <Connection
+            servers={servers}
+            selected={savedSelected}
             status={status}
-            isActive={status.serverId === draft.id}
             captchaUrl={captchaUrl}
-            logs={logs}
-            onChange={setDraft}
-            onSave={handleSave}
-            onDelete={handleDelete}
+            pending={pending}
+            trafficHistory={trafficHistory}
+            onSelect={selectServer}
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
-            onClearLogs={() => setLogs([])}
+            onAdd={() => setShowAdd(true)}
+            onEdit={() => setView('servers')}
           />
         )}
-        {connectError && (
-          <div className="notice error" style={{position: 'absolute', bottom: 240, left: 280, right: 20}}>
-            {connectError}
+        {view === 'settings' && <DesktopPreferences version={version} />}
+        {view === 'logs' && (
+          <section className="logs-page">
+            <header className="page-heading">
+              <div>
+                <span className="eyebrow">ДИАГНОСТИКА</span>
+                <h1>Журнал событий</h1>
+              </div>
+              <span className="muted">Последние {MAX_LOG_LINES} записей</span>
+            </header>
+            <LogConsole lines={logs} onClear={() => setLogs([])} />
+          </section>
+        )}
+        {view === 'servers' && (
+          <div className="profiles-page">
+            <Sidebar
+              servers={servers}
+              selectedId={selectedId}
+              activeState={status.state}
+              activeServerId={status.serverId}
+              onSelect={selectServer}
+              onAdd={() => setShowAdd(true)}
+            />
+            <div className="main">
+              {!draft ? (
+                <div className="empty-state">
+                  <p>Выберите сервер слева или добавьте новый, чтобы подключиться через free-turn-proxy.</p>
+                </div>
+              ) : (
+                <ServerDetail
+                  server={draft}
+                  dirty={dirty}
+                  status={status}
+                  isActive={status.serverId === draft.id}
+                  captchaUrl={captchaUrl}
+                  logs={logs}
+                  onChange={setDraft}
+                  onSave={() => {
+                    handleSave().catch((e) => setConnectError(String(e)))
+                  }}
+                  onDelete={() => {
+                    handleDelete().catch((e) => setConnectError(String(e)))
+                  }}
+                  onConnect={handleConnect}
+                  onDisconnect={handleDisconnect}
+                  onClearLogs={() => setLogs([])}
+                />
+              )}
+            </div>
           </div>
         )}
-      </div>
+      </main>
       {showAdd && (
         <AddServerModal
           onClose={() => setShowAdd(false)}
           onCreated={(s) => {
             setServers((prev) => [...prev, s])
             setSelectedId(s.id)
+            localStorage.setItem('freeturn:selected-server', s.id)
             setShowAdd(false)
           }}
         />

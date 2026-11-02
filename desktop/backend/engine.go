@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/notify"
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/wintunnel"
@@ -35,6 +36,7 @@ type LogLine struct {
 const (
 	eventLog     = "core:log"
 	eventState   = "core:state"
+	eventStats   = "core:stats"
 	eventCaptcha = "core:captcha"
 )
 
@@ -47,6 +49,7 @@ type Engine struct {
 
 	mu       sync.Mutex
 	serverID string
+	traffic  trafficMeter
 }
 
 func NewEngine(store *Store) *Engine {
@@ -56,7 +59,21 @@ func NewEngine(store *Store) *Engine {
 	return e
 }
 
-func (e *Engine) SetContext(ctx context.Context) { e.ctx = ctx }
+func (e *Engine) SetContext(ctx context.Context) {
+	e.ctx = ctx
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				wailsruntime.EventsEmit(ctx, eventStats, e.Status())
+			}
+		}
+	}()
+}
 
 func (e *Engine) Connect(srv Server) error {
 	if srv.Peer == "" {
@@ -83,6 +100,7 @@ func (e *Engine) Connect(srv Server) error {
 
 	e.mu.Lock()
 	e.serverID = srv.ID
+	e.traffic = trafficMeter{}
 	e.mu.Unlock()
 
 	if vpn {
@@ -112,13 +130,18 @@ func (e *Engine) forceStop() {
 }
 
 func (e *Engine) Status() Status {
-	snap := mobile.GetState()
 	e.mu.Lock()
+	defer e.mu.Unlock()
+	snap := mobile.GetState()
 	serverID := e.serverID
-	e.mu.Unlock()
+	txRate, rxRate := e.traffic.sample(snap.TxTotal, snap.RxTotal, time.Now())
+	if snap.State == mobile.StateIdle || snap.State == mobile.StateError {
+		e.traffic = trafficMeter{}
+		txRate, rxRate = 0, 0
+	}
 	return Status{
 		State: snap.State, Streams: snap.Streams, Total: snap.Total, ErrMsg: snap.ErrMsg,
-		TxRate: snap.TxRate, RxRate: snap.RxRate, TxTotal: snap.TxTotal, RxTotal: snap.RxTotal,
+		TxRate: txRate, RxRate: rxRate, TxTotal: snap.TxTotal, RxTotal: snap.RxTotal,
 		ServerID: serverID,
 	}
 }

@@ -4,8 +4,11 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"strconv"
 
+	"github.com/samosvalishe/free-turn-proxy/desktop/backend/vpnservice"
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/wintunnel"
+	"github.com/samosvalishe/free-turn-proxy/desktop/integration"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -16,6 +19,38 @@ import (
 var assets embed.FS
 
 func main() {
+	if len(os.Args) >= 2 && (os.Args[1] == "--install-vpn-service" || os.Args[1] == "--remove-vpn-service") {
+		var err error
+		if os.Args[1] == "--install-vpn-service" && len(os.Args) == 4 {
+			var uid uint64
+			uid, err = strconv.ParseUint(os.Args[3], 10, 32)
+			if err == nil {
+				err = vpnservice.Install(uint32(uid), os.Args[2])
+			}
+		} else if os.Args[1] == "--remove-vpn-service" && len(os.Args) == 3 {
+			var uid uint64
+			uid, err = strconv.ParseUint(os.Args[2], 10, 32)
+			if err == nil {
+				err = vpnservice.Remove(uint32(uid))
+			}
+		} else {
+			err = fmt.Errorf("invalid VPN service installation arguments")
+		}
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) == 2 && os.Args[1] == "--install-desktop" {
+		path, err := integration.Install()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		fmt.Println("FreeTurn installed:", path)
+		return
+	}
 	if len(os.Args) == 3 && os.Args[1] == "--vpn-helper" {
 		if err := wintunnel.RunHelper(os.Args[2]); err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -37,9 +72,15 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
+		BackgroundColour: &options.RGBA{R: 14, G: 15, B: 20, A: 255},
 		OnStartup:        app.startup,
 		OnShutdown:       app.shutdown,
+		OnBeforeClose:    app.beforeClose,
+		OnDomReady:       app.domReady,
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId:               "9fbdd69c-731b-4ab9-91d4-c94e6814b335",
+			OnSecondInstanceLaunch: func(data options.SecondInstanceData) { app.ShowWindow() },
+		},
 		Bind: []interface{}{
 			app,
 		},

@@ -4,9 +4,39 @@ package wintunnel
 
 import (
 	"net/netip"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
+
+func TestEnableIPv6(t *testing.T) {
+	for _, initial := range []string{"1\n", "0\n"} {
+		t.Run(initial[:1], func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "disable_ipv6")
+			if err := os.WriteFile(path, []byte(initial), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := enableIPv6(path); err != nil {
+				t.Fatal(err)
+			}
+			value, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(value) != "0\n" {
+				t.Fatalf("disable_ipv6 = %q, want 0", value)
+			}
+		})
+	}
+}
+
+func TestEnableIPv6Unavailable(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "disable_ipv6")
+	if err := enableIPv6(path); !os.IsNotExist(err) {
+		t.Fatalf("expected missing IPv6 sysctl error, got %v", err)
+	}
+}
 
 func TestSplitDefaultRoutes(t *testing.T) {
 	cases := []struct {
