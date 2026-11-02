@@ -78,8 +78,9 @@ func (a *App) SetCloseToTray(enabled bool) error {
 	return nil
 }
 
-func (a *App) SetAutostart(enabled bool) error { return integration.SetAutostart(enabled) }
-func (a *App) InstallDesktop() (string, error) { return integration.Install() }
+func (a *App) SetAutostart(enabled bool) error        { return integration.SetAutostart(enabled) }
+func (a *App) InstallDesktop() (string, error)        { return integration.Install() }
+func (a *App) CreateDesktopShortcut() (string, error) { return integration.CreateDesktopShortcut() }
 
 func (a *App) InstallVPNHelper() error { return integration.ConfigureVPNHelper(false) }
 func (a *App) RemoveVPNHelper() error  { return integration.ConfigureVPNHelper(true) }

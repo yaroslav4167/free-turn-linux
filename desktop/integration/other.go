@@ -7,6 +7,9 @@ import "errors"
 const Supported = false
 
 func VPNHelperAvailable() bool { return false }
+func CreateDesktopShortcut() (string, error) {
+	return "", errors.New("desktop shortcuts are only supported on Linux")
+}
 func ConfigureVPNHelper(remove bool) error {
 	return errors.New("system VPN helper is only supported on Linux")
 }

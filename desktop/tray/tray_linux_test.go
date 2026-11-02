@@ -59,3 +59,16 @@ func TestNoTrayIsUnavailable(t *testing.T) {
 		t.Fatal("nil tray is available")
 	}
 }
+
+func TestApplicationIconPixmap(t *testing.T) {
+	icons, err := applicationIcon()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(icons) != 1 || icons[0].Width != 64 || icons[0].Height != 64 || len(icons[0].Pixels) != 64*64*4 {
+		t.Fatal("invalid application icon dimensions")
+	}
+	if got := dbus.SignatureOf(icons).String(); got != "a(iiay)" {
+		t.Fatalf("icon signature = %s", got)
+	}
+}

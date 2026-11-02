@@ -1,6 +1,27 @@
+<img src="desktop/assets/icon.svg" alt="Иконка FreeTurn" width="88" height="88">
+
 # FreeTurn for Linux
 
 Графический клиент [free-turn-proxy](https://github.com/purkalolka/free-turn-proxy) для Linux на Go, Wails 2 и React. Клиент поддерживает реле для внешнего WireGuard/AmneziaWG и встроенный VPN одной кнопкой.
+
+## Интерфейс
+
+Скриншоты интерфейса на демонстрационных данных. Адрес сервера, скорости и состояние подключения на этих снимках — тестовые, без реального VPN-подключения и пользовательских ключей.
+
+### Подключение и графики трафика
+
+![Главный экран FreeTurn с кнопкой подключения и графиками скорости](docs/screenshots/connection.png)
+
+### Профили серверов
+
+![Редактирование демонстрационного профиля сервера FreeTurn](docs/screenshots/servers.png)
+
+<details>
+<summary>Настройки: VPN-helper, трей, автозапуск и ярлык</summary>
+
+![Настройки FreeTurn и создание ярлыка на рабочем столе](docs/screenshots/settings.png)
+
+</details>
 
 ## Поддерживаемые системы
 
@@ -10,6 +31,20 @@
 Готовый архив релиза содержит клиент `freeturn-desktop`, системный компонент `freeturn-vpn-helper`, консольные `client` и `server`, а также установщик `install-desktop.sh`. После распаковки запустите `./freeturn-desktop`. Для установки откройте **Настройки → Установить / обновить** или выполните `sh ./install-desktop.sh` (также доступно `./freeturn-desktop --install-desktop`).
 
 Установка не требует `sudo`: стабильная копия клиента помещается в `~/.local/share/FreeTurnDesktop/`, а ярлык — в `~/.local/share/applications/freeturn.desktop`. Учитывается `XDG_DATA_HOME`. Повторная установка обновляет копию клиента. Зависимости GTK/WebKit и инструменты VPN необходимо установить отдельно.
+
+### Иконка и ярлык на рабочем столе
+
+У клиента собственная иконка FreeTurn: она используется в меню приложений, доке, окне и трее. Установка размещает SVG и PNG в пользовательской теме `~/.local/share/icons/hicolor/` (с учётом `XDG_DATA_HOME`). Запускной файл и GTK используют одинаковый идентификатор `freeturn`, чтобы окно корректно группировалось в доке.
+
+Чтобы добавить ярлык на рабочий стол, откройте **Настройки → Установка → Ярлык на рабочий стол**. Учитывается локализованный `XDG_DESKTOP_DIR` из `user-dirs.dirs`, в том числе «Рабочий стол». Ярлык указывает на установленную копию, а не на временный каталог распакованного архива. Если окружение потребует подтверждения, выберите **Разрешить запуск**. Чужой существующий `freeturn.desktop` не перезаписывается.
+
+Если GNOME не отображает значки рабочего стола, потребуется расширение **Desktop Icons NG (DING)**. Ярлык в меню приложений работает без него.
+
+Альтернатива из каталога приложения (без `sudo`):
+
+```sh
+./freeturn-desktop --create-desktop-shortcut
+```
 
 Для работы окна нужны GTK3 и WebKit2GTK 4.1. Для уведомлений о капче используется `notify-send` (`libnotify-bin` в Debian/Ubuntu, `libnotify` в Arch).
 
@@ -87,5 +122,7 @@ sh packaging/linux/build-vpn-helper.sh
 ```
 
 Проверки обновления состояния и статистики интерфейса: `npm --prefix desktop/frontend test`.
+
+Исходник иконки — `desktop/assets/icon.svg`; PNG-версии и favicon уже включены в репозиторий. После изменения SVG их можно обновить командой `sh packaging/linux/render-icons.sh` (нужен `rsvg-convert` из `librsvg2-bin` / `librsvg`).
 
 Go-модуль намеренно сохраняет имя `github.com/samosvalishe/free-turn-proxy`, чтобы не менять импорты ядра и существующие инструменты. Источник Linux-клиента отделён от [Windows-клиента](https://github.com/purkalolka/free-turn-windows); серверная часть и протокол совместимы.

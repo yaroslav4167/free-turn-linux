@@ -170,6 +170,20 @@ export default function DesktopPreferences({version}: {version: string}) {
             >
               {busy ? 'Подождите…' : 'Установить / обновить'}
             </button>
+            <p className="settings-note">Ярлык в меню устанавливается с собственной иконкой FreeTurn.</p>
+            <button
+              className="btn"
+              style={{marginTop: 12}}
+              disabled={busy || !settings.supported}
+              onClick={() =>
+                run(
+                  () => desktop().CreateDesktopShortcut(),
+                  'Ярлык создан на рабочем столе. Если окружение попросит, выберите «Разрешить запуск».',
+                )
+              }
+            >
+              <Icon name="plus" size={17} /> Ярлык на рабочий стол
+            </button>
             <p className="settings-note">
               Автозапуск также устанавливает стабильную копию клиента — распакованный архив можно перенести или удалить.
             </p>
@@ -177,9 +191,7 @@ export default function DesktopPreferences({version}: {version: string}) {
         </>
       )}
       <footer className="settings-about">
-        <span className="brand-mark">
-          <Icon name="shield" />
-        </span>
+        <img className="app-icon" src="/freeturn.svg" alt="" width="44" height="44" />
         <div>
           <strong>FreeTurn для Linux</strong>
           <p>Core {version || '…'} · Wails + React</p>

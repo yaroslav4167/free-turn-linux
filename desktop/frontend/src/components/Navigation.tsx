@@ -21,9 +21,7 @@ export default function Navigation({
   return (
     <aside className="navigation">
       <div className="brand" aria-label="FreeTurn" title="FreeTurn">
-        <span className="brand-mark">
-          <Icon name="shield" size={23} />
-        </span>
+        <img className="app-icon" src="/freeturn.svg" alt="FreeTurn" width="44" height="44" />
       </div>
       <nav aria-label="Главное меню">
         {items.map((item) => (

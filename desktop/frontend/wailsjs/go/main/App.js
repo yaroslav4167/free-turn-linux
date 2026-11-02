@@ -22,6 +22,10 @@ export function CoreVersion() {
   return window['go']['main']['App']['CoreVersion']();
 }
 
+export function CreateDesktopShortcut() {
+  return window['go']['main']['App']['CreateDesktopShortcut']();
+}
+
 export function DeleteServer(arg1) {
   return window['go']['main']['App']['DeleteServer'](arg1);
 }

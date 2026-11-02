@@ -145,6 +145,10 @@ func (m *trayMenu) AboutToShowGroup(ids []int32) ([]int32, []int32, *dbus.Error)
 }
 
 func Start(title string, onShow, onQuit func()) (*Tray, error) {
+	icon, err := applicationIcon()
+	if err != nil {
+		return nil, fmt.Errorf("decode application icon: %w", err)
+	}
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		return nil, err
@@ -172,7 +176,7 @@ func Start(title string, onShow, onQuit func()) (*Tray, error) {
 	if _, err := prop.Export(conn, "/StatusNotifierItem", prop.Map{itemInterface: {
 		"Category": readonly("Communications"), "Id": readonly("freeturn-desktop"),
 		"Title": readonly(title), "Status": readonly("Active"),
-		"IconName": readonly("network-vpn"), "ItemIsMenu": readonly(false),
+		"IconName": readonly(""), "IconPixmap": readonly(icon), "ItemIsMenu": readonly(false),
 		"Menu": readonly(dbus.ObjectPath("/MenuBar")),
 	}}); err != nil {
 		return fail(err)

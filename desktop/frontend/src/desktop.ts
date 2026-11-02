@@ -14,6 +14,7 @@ interface DesktopAPI {
   SetCloseToTray(enabled: boolean): Promise<void>
   SetAutostart(enabled: boolean): Promise<void>
   InstallDesktop(): Promise<string>
+  CreateDesktopShortcut(): Promise<string>
   InstallVPNHelper(): Promise<void>
   RemoveVPNHelper(): Promise<void>
   MinimiseToTray(): Promise<void>

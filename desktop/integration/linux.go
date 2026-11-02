@@ -3,6 +3,8 @@
 package integration
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,7 +13,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
+	appassets "github.com/samosvalishe/free-turn-proxy/desktop/assets"
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/vpnservice"
 )
 
@@ -46,10 +50,14 @@ func desktopEntry(executable string, autostart bool) (string, error) {
 		command += " --autostart"
 	}
 	command = strings.ReplaceAll(command, "\\", "\\\\")
-	return "[Desktop Entry]\nType=Application\nVersion=1.0\nName=FreeTurn\nComment=VPN and TURN relay client\nExec=" + command + "\nIcon=network-vpn\nTerminal=false\nCategories=Network;\nStartupNotify=true\n", nil
+	return "[Desktop Entry]\nType=Application\nVersion=1.0\nName=FreeTurn\nGenericName=VPN client\nGenericName[ru]=VPN-клиент\nComment=VPN and TURN relay client\nComment[ru]=VPN и TURN-реле\nExec=" + command + "\nIcon=freeturn\nTerminal=false\nCategories=Network;Security;\nKeywords=VPN;WireGuard;AmneziaWG;TURN;\nStartupNotify=true\nStartupWMClass=freeturn\nX-FreeTurn-Managed=true\n", nil
 }
 
 func writeEntry(path, executable string, autostart bool) error {
+	return writeEntryMode(path, executable, autostart, 0o644)
+}
+
+func writeEntryMode(path, executable string, autostart bool, mode os.FileMode) error {
 	entry, err := desktopEntry(executable, autostart)
 	if err != nil {
 		return err
@@ -62,7 +70,7 @@ func writeEntry(path, executable string, autostart bool) error {
 		return err
 	}
 	defer os.Remove(tmp.Name())
-	if err := tmp.Chmod(0o644); err != nil {
+	if err := tmp.Chmod(mode); err != nil {
 		_ = tmp.Close()
 		return err
 	}
@@ -109,10 +117,123 @@ func Install() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if err := installIcons(dir); err != nil {
+		return "", fmt.Errorf("install application icon: %w", err)
+	}
 	if err := writeEntry(filepath.Join(dir, "applications", "freeturn.desktop"), target, false); err != nil {
 		return "", err
 	}
 	return target, nil
+}
+
+func installIcons(dir string) error {
+	icons := map[string][]byte{
+		"scalable/apps/freeturn.svg": appassets.IconSVG,
+		"512x512/apps/freeturn.png":  appassets.IconPNG,
+		"64x64/apps/freeturn.png":    appassets.TrayIconPNG,
+	}
+	for name, data := range icons {
+		path := filepath.Join(dir, "icons", "hicolor", name)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			return err
+		}
+		tmp, err := os.CreateTemp(filepath.Dir(path), ".freeturn-icon-*")
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(tmp, bytes.NewReader(data)); err != nil {
+			_ = tmp.Close()
+			_ = os.Remove(tmp.Name())
+			return err
+		}
+		if err := tmp.Chmod(0o644); err != nil {
+			_ = tmp.Close()
+			_ = os.Remove(tmp.Name())
+			return err
+		}
+		if err := tmp.Close(); err != nil {
+			_ = os.Remove(tmp.Name())
+			return err
+		}
+		if err := os.Rename(tmp.Name(), path); err != nil {
+			_ = os.Remove(tmp.Name())
+			return err
+		}
+	}
+	return nil
+}
+
+func desktopDirectory() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	config, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	data, err := os.ReadFile(filepath.Join(config, "user-dirs.dirs"))
+	if os.IsNotExist(err) {
+		return filepath.Join(home, "Desktop"), nil
+	}
+	if err != nil {
+		return "", err
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		key, value, found := strings.Cut(strings.TrimSpace(line), "=")
+		if !found || strings.TrimSpace(key) != "XDG_DESKTOP_DIR" {
+			continue
+		}
+		value, err = strconv.Unquote(strings.TrimSpace(value))
+		if err != nil {
+			return "", fmt.Errorf("invalid XDG_DESKTOP_DIR: %w", err)
+		}
+		for _, prefix := range []string{"$HOME", "${HOME}"} {
+			if value == prefix || strings.HasPrefix(value, prefix+"/") {
+				value = home + strings.TrimPrefix(value, prefix)
+				break
+			}
+		}
+		if !filepath.IsAbs(value) || strings.ContainsAny(value, "\r\n\x00") {
+			return "", errors.New("invalid desktop directory")
+		}
+		value = filepath.Clean(value)
+		if value == filepath.Clean(home) {
+			return "", errors.New("рабочий стол отключён в XDG; ярлык доступен в меню приложений")
+		}
+		return value, nil
+	}
+	return filepath.Join(home, "Desktop"), nil
+}
+
+func CreateDesktopShortcut() (string, error) {
+	dir, err := desktopDirectory()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(dir, "freeturn.desktop")
+	if data, err := os.ReadFile(path); err == nil {
+		if !strings.Contains(string(data), "X-FreeTurn-Managed=true\n") {
+			return "", fmt.Errorf("ярлык %s уже существует и не управляется FreeTurn; переименуйте его перед созданием нового", path)
+		}
+	} else if !os.IsNotExist(err) {
+		return "", err
+	}
+	executable, err := Install()
+	if err != nil {
+		return "", err
+	}
+	if err := writeEntryMode(path, executable, false, 0o755); err != nil {
+		return "", err
+	}
+	// Desktop environments without GIO can still use the executable launcher.
+	// GNOME may require an explicit “Allow Launching” if metadata is unavailable.
+	if gio, err := exec.LookPath("gio"); err == nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = exec.CommandContext(ctx, gio, "set", path, "metadata::trusted", "true").Run()
+	}
+	return path, nil
 }
 
 func copyExecutable(sourcePath, target string) error {

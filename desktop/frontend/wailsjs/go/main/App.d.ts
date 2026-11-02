@@ -14,6 +14,8 @@ export function CopyText(arg1:string):Promise<void>;
 
 export function CoreVersion():Promise<string>;
 
+export function CreateDesktopShortcut():Promise<string>;
+
 export function DeleteServer(arg1:string):Promise<void>;
 
 export function DesktopSettings():Promise<main.DesktopSettings>;

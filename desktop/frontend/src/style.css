@@ -688,6 +688,12 @@ button:disabled {
   border-radius: 14px;
   flex-shrink: 0;
 }
+.app-icon {
+  display: block;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
 .navigation nav {
   display: flex;
   flex-direction: column;

@@ -28,7 +28,11 @@ export default function Icon({name, size = 20}: {name: IconName; size?: number})
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d={paths[name]} />
+      <path
+        d={paths[name]}
+        fill={name === 'stop' ? 'currentColor' : 'none'}
+        stroke={name === 'stop' ? 'none' : 'currentColor'}
+      />
     </svg>
   )
 }

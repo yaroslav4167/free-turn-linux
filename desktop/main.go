@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	appassets "github.com/samosvalishe/free-turn-proxy/desktop/assets"
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/vpnservice"
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/wintunnel"
 	"github.com/samosvalishe/free-turn-proxy/desktop/integration"
@@ -13,6 +14,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 )
 
 //go:embed all:frontend/dist
@@ -51,6 +53,15 @@ func main() {
 		fmt.Println("FreeTurn installed:", path)
 		return
 	}
+	if len(os.Args) == 2 && os.Args[1] == "--create-desktop-shortcut" {
+		path, err := integration.CreateDesktopShortcut()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		fmt.Println("FreeTurn desktop shortcut:", path)
+		return
+	}
 	if len(os.Args) == 3 && os.Args[1] == "--vpn-helper" {
 		if err := wintunnel.RunHelper(os.Args[2]); err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -73,10 +84,15 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 14, G: 15, B: 20, A: 255},
-		OnStartup:        app.startup,
-		OnShutdown:       app.shutdown,
-		OnBeforeClose:    app.beforeClose,
-		OnDomReady:       app.domReady,
+		Linux: &linux.Options{
+			Icon:             appassets.IconPNG,
+			ProgramName:      "freeturn",
+			WebviewGpuPolicy: linux.WebviewGpuPolicyNever,
+		},
+		OnStartup:     app.startup,
+		OnShutdown:    app.shutdown,
+		OnBeforeClose: app.beforeClose,
+		OnDomReady:    app.domReady,
 		SingleInstanceLock: &options.SingleInstanceLock{
 			UniqueId:               "9fbdd69c-731b-4ab9-91d4-c94e6814b335",
 			OnSecondInstanceLaunch: func(data options.SecondInstanceData) { app.ShowWindow() },

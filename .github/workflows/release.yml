@@ -55,6 +55,10 @@ jobs:
           cp desktop/build/bin/freeturn-vpn-helper dist/package/
           cp README.md LICENSE dist/package/
           cp packaging/linux/freeturn.desktop dist/package/
+          cp desktop/assets/icon.svg dist/package/freeturn.svg
+          mkdir -p dist/package/desktop/assets dist/package/docs
+          cp desktop/assets/icon.svg dist/package/desktop/assets/
+          cp -R docs/screenshots dist/package/docs/
           cp packaging/linux/install-desktop.sh dist/package/
           chmod +x dist/package/install-desktop.sh
           go build -ldflags "-checklinkname=0 -s -w -X main.version=${RELEASE_TAG}" -trimpath -o dist/package/client ./cmd/client
