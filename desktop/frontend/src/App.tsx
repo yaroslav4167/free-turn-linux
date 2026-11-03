@@ -18,6 +18,7 @@ import LogConsole, {LogEntry} from './components/LogConsole'
 import Navigation, {View} from './components/Navigation'
 import Connection from './components/Connection'
 import DesktopPreferences from './components/DesktopPreferences'
+import {UpdateNotice} from './components/UpdatePreferences'
 import {desktop} from './desktop'
 import {watchStatus} from './status'
 import {EMPTY_TRAFFIC_HISTORY, recordTraffic} from './trafficHistory'
@@ -153,6 +154,7 @@ export default function App() {
     <div className="app-shell">
       <Navigation view={view} onChange={setView} version={version} />
       <main className="workspace">
+        {view !== 'settings' && <UpdateNotice onOpen={() => setView('settings')} />}
         {connectError && (
           <div className="app-error notice error" role="alert">
             <span>{connectError}</span>

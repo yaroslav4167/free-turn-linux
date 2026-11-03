@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/wintunnel"
 	"github.com/samosvalishe/free-turn-proxy/desktop/integration"
 	"github.com/samosvalishe/free-turn-proxy/desktop/tray"
+	"github.com/samosvalishe/free-turn-proxy/desktop/updates"
 	"github.com/samosvalishe/free-turn-proxy/internal/wire/rtpopus"
 	"github.com/samosvalishe/free-turn-proxy/mobile"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -26,16 +29,22 @@ var errNoSSHConfig = errors.New("для этого сервера нет сох�
 // App is the Wails-bound facade the frontend calls into. It stays thin - all
 // real logic lives in backend, so it can be unit-tested without a Wails runtime.
 type App struct {
-	ctx              context.Context
-	store            *backend.Store
-	engine           *backend.Engine
-	desktopMu        sync.Mutex
-	preferences      integration.Preferences
-	tray             *tray.Tray
-	trayError        string
-	quitting         bool
-	autoConnectOnce  sync.Once
-	autoConnectError string
+	ctx               context.Context
+	store             *backend.Store
+	engine            *backend.Engine
+	desktopMu         sync.Mutex
+	preferences       integration.Preferences
+	tray              *tray.Tray
+	trayError         string
+	quitting          bool
+	autoConnectOnce   sync.Once
+	autoConnectError  string
+	updater           *updates.Manager
+	updateCancel      context.CancelFunc
+	updateContext     context.Context
+	updateInstallMu   sync.Mutex
+	updateInstallGate *os.File
+	updateResult      integration.UpdateResult
 }
 
 func NewApp() *App {
@@ -49,20 +58,30 @@ func NewApp() *App {
 	if err != nil {
 		prefs = integration.Preferences{CloseToTray: false}
 	}
-	return &App{store: store, engine: backend.NewEngine(store), preferences: prefs}
+	return &App{store: store, engine: backend.NewEngine(store), preferences: prefs, updater: updates.New(desktopVersion, runtime.GOARCH, updateRepository), updateResult: integration.LoadUpdateResult()}
 }
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.engine.SetContext(ctx)
 	a.startTray()
+	a.startUpdateChecks(ctx)
 }
 
 func (a *App) shutdown(ctx context.Context) {
+	if a.updateCancel != nil {
+		a.updateCancel()
+	}
 	a.engine.Disconnect()
 	if a.tray != nil {
 		a.tray.Close()
 	}
+	a.desktopMu.Lock()
+	if a.updateInstallGate != nil {
+		_ = a.updateInstallGate.Close()
+		a.updateInstallGate = nil
+	}
+	a.desktopMu.Unlock()
 }
 
 // setupProgress forwards one progress line from a running server-side job to

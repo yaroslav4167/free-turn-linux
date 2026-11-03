@@ -1,3 +1,47 @@
+export namespace updates {
+
+	export class State {
+	    repository: string;
+	    currentVersion: string;
+	    currentKnown: boolean;
+	    latestVersion: string;
+	    available: boolean;
+	    assetName: string;
+	    releaseUrl: string;
+	    checkedAt: string;
+	    busy: string;
+	    error: string;
+	    downloadedPath: string;
+	    received: number;
+	    total: number;
+	    installationMessage: string;
+	    backupPath: string;
+
+	    static createFrom(source: any = {}) {
+	        return new State(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.repository = source["repository"];
+	        this.currentVersion = source["currentVersion"];
+	        this.currentKnown = source["currentKnown"];
+	        this.latestVersion = source["latestVersion"];
+	        this.available = source["available"];
+	        this.assetName = source["assetName"];
+	        this.releaseUrl = source["releaseUrl"];
+	        this.checkedAt = source["checkedAt"];
+	        this.busy = source["busy"];
+	        this.error = source["error"];
+	        this.downloadedPath = source["downloadedPath"];
+	        this.received = source["received"];
+	        this.total = source["total"];
+	        this.installationMessage = source["installationMessage"];
+	        this.backupPath = source["backupPath"];
+	    }
+	}
+}
+
 export namespace backend {
 	
 	export class GuestShare {
@@ -260,6 +304,7 @@ export namespace main {
 	    autoConnect: boolean;
 	    autoConnectServerId: string;
 	    autoConnectError: string;
+	    autoCheckUpdates: boolean;
 	    supported: boolean;
 	    trayAvailable: boolean;
 	    trayError: string;
@@ -277,6 +322,7 @@ export namespace main {
 	        this.autoConnect = source["autoConnect"];
 	        this.autoConnectServerId = source["autoConnectServerId"];
 	        this.autoConnectError = source["autoConnectError"];
+	        this.autoCheckUpdates = source["autoCheckUpdates"];
 	        this.supported = source["supported"];
 	        this.trayAvailable = source["trayAvailable"];
 	        this.trayError = source["trayError"];

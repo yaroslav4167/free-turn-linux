@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react'
 import {desktop, DesktopSettings} from '../desktop'
 import Icon from './Icon'
+import UpdatePreferences from './UpdatePreferences'
 import {ListServers} from '../../wailsjs/go/main/App'
 import {backend} from '../../wailsjs/go/models'
 
@@ -53,6 +54,8 @@ export default function DesktopPreferences({version}: {version: string}) {
       {!settings && !error && <p>Загрузка настроек…</p>}
       {settings && (
         <>
+          <UpdatePreferences autoCheck={settings.autoCheckUpdates} disabled={busy} canInstall={settings.supported}
+            onAutoCheck={(enabled) => run(() => desktop().SetAutoCheckUpdates(enabled))} />
           <div className="settings-card">
             <h2>
               <Icon name="shield" /> Подключение VPN без пароля
@@ -135,7 +138,7 @@ export default function DesktopPreferences({version}: {version: string}) {
                 ))}
               />
             </label>
-            <label className="field">
+            <label className="field autoconnect-profile">
               <span>Профиль автоподключения</span>
               <select
                 value={settings.autoConnectServerId}

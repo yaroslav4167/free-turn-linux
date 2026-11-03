@@ -60,11 +60,14 @@ func TestAutoConnectPreferences(t *testing.T) {
 	if err := a.SetCloseToTray(false); err != nil {
 		t.Fatal(err)
 	}
+	if err := a.SetAutoCheckUpdates(true); err != nil {
+		t.Fatal(err)
+	}
 	prefs, err := integration.LoadPreferences()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !prefs.AutoConnect || prefs.AutoConnectServerID != srv.ID || prefs.CloseToTray {
+	if !prefs.AutoConnect || prefs.AutoConnectServerID != srv.ID || prefs.CloseToTray || !prefs.AutoCheckUpdates {
 		t.Fatalf("settings lost: %+v", prefs)
 	}
 	if err := store.Delete(srv.ID); err != nil {

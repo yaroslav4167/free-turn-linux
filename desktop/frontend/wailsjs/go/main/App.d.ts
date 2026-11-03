@@ -3,6 +3,17 @@
 import {backend} from '../models';
 import {main} from '../models';
 import {serversetup} from '../models';
+import {updates} from '../models';
+
+export function CheckForUpdates():Promise<void>;
+
+export function DownloadUpdate():Promise<void>;
+
+export function InstallUpdate():Promise<void>;
+
+export function SetAutoCheckUpdates(arg1:boolean):Promise<void>;
+
+export function UpdateState():Promise<updates.State>;
 
 export function BuildLink(arg1:backend.Server):Promise<string>;
 

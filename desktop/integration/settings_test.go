@@ -9,7 +9,7 @@ import (
 func TestAutoConnectDefaultsAndMigration(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	prefs, err := LoadPreferences()
-	if err != nil || prefs.AutoConnect {
+	if err != nil || prefs.AutoConnect || !prefs.AutoCheckUpdates {
 		t.Fatalf("autoconnect must default off: %+v, %v", prefs, err)
 	}
 	path, _ := preferencesPath()
@@ -20,7 +20,7 @@ func TestAutoConnectDefaultsAndMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	prefs, err = LoadPreferences()
-	if err != nil || prefs.AutoConnect || prefs.CloseToTray {
+	if err != nil || prefs.AutoConnect || prefs.CloseToTray || !prefs.AutoCheckUpdates {
 		t.Fatalf("bad migration: %+v, %v", prefs, err)
 	}
 }

@@ -21,6 +21,9 @@ import (
 var assets embed.FS
 
 func main() {
+	if integration.HandleUpdateProcess() {
+		return
+	}
 	if len(os.Args) >= 2 && (os.Args[1] == "--install-vpn-service" || os.Args[1] == "--remove-vpn-service") {
 		var err error
 		if os.Args[1] == "--install-vpn-service" && len(os.Args) == 4 {

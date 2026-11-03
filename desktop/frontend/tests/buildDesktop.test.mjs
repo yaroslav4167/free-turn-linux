@@ -10,6 +10,16 @@ import {createHash} from 'node:crypto'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 
+test('GitHub workflows inject their own repository into update builds', () => {
+  for (const name of ['build.yml', 'release.yml']) {
+    const workflow = readFileSync(join(root, '.github/workflows', name), 'utf8')
+    assert.match(workflow, /UPDATE_REPOSITORY: \$\{\{ github\.repository \}\}/)
+  }
+  const release = readFileSync(join(root, '.github/workflows/release.yml'), 'utf8')
+  assert.match(release, /-X main\.updateRepository=\$\{UPDATE_REPOSITORY\}/)
+  assert.match(release, /-X main\.desktopVersion=\$\{RELEASE_TAG\}/)
+})
+
 test('desktop build script packages both binaries, documentation and checksums', {skip: process.platform !== 'linux'}, (t) => {
   const temporary = mkdtempSync(join(tmpdir(), 'freeturn-desktop-build-'))
   t.after(() => rmSync(temporary, {recursive: true, force: true}))
@@ -36,13 +46,16 @@ if [ "\${SKIP_HELPER:-}" != 1 ]; then printf 'helper' > build/bin/freeturn-vpn-h
   stub('npm', `printf '%s\\n' "$*" > "$STUB_REPO/npm.log"\n`)
   stub('node', 'exit 0\n')
   stub('pkg-config', 'exit 0\n')
-  const env = {...process.env, PATH: tools + ':' + process.env.PATH, STUB_TOOLS: tools, STUB_REPO: repo}
+  const env = {...process.env, PATH: tools + ':' + process.env.PATH, STUB_TOOLS: tools, STUB_REPO: repo,
+    UPDATE_REPOSITORY: 'example/custom-fork', VERSION: 'v2.3.4'}
   const script = join(repo, 'packaging/linux/build-desktop.sh')
   const run = spawnSync('sh', [script], {cwd: temporary, env, encoding: 'utf8'})
   assert.equal(run.status, 0, run.stderr)
   assert.match(readFileSync(join(repo, 'install.log'), 'utf8'), /wails@v2\.16\.0/)
   assert.match(readFileSync(join(repo, 'npm.log'), 'utf8'), /--prefix desktop\/frontend ci/)
   assert.match(readFileSync(join(repo, 'wails.log'), 'utf8'), /build -tags webkit2_41/)
+  assert.match(readFileSync(join(repo, 'wails.log'), 'utf8'), /-X main.updateRepository=example\/custom-fork/)
+  assert.match(readFileSync(join(repo, 'wails.log'), 'utf8'), /-X main.desktopVersion=v2\.3\.4/)
   const archive = join(repo, 'dist/FreeTurn-Linux-amd64.tar.gz')
   const tar = gunzipSync(readFileSync(archive))
   const entries = []

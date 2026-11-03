@@ -20,6 +20,7 @@ jobs:
       - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-go@v6.4.0
         with:
@@ -43,7 +44,10 @@ jobs:
 
       - name: Build desktop client
         working-directory: desktop
-        run: $(go env GOPATH)/bin/wails build -tags webkit2_41 -ldflags "-checklinkname=0 -s -w" -trimpath
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+          UPDATE_REPOSITORY: ${{ github.repository }}
+        run: $(go env GOPATH)/bin/wails build -tags webkit2_41 -ldflags "-checklinkname=0 -s -w -X main.desktopVersion=${RELEASE_TAG} -X main.updateRepository=${UPDATE_REPOSITORY}" -trimpath
 
       - name: Package Linux release
         shell: bash

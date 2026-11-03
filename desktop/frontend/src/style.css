@@ -694,6 +694,29 @@ button:disabled {
   height: 44px;
   flex-shrink: 0;
 }
+
+.update-path {
+  overflow-wrap: anywhere;
+}
+.update-progress {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  margin-top: 8px;
+}
+
+.settings-card .notice {
+  margin-top: 14px;
+}
+.update-actions {
+  flex-wrap: wrap;
+}
+.autoconnect-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0;
+}
 .navigation nav {
   display: flex;
   flex-direction: column;

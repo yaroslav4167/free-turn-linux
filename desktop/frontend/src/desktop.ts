@@ -5,6 +5,7 @@ export interface DesktopSettings {
   autoConnect: boolean
   autoConnectServerId: string
   autoConnectError: string
+  autoCheckUpdates: boolean
   supported: boolean
   trayAvailable: boolean
   trayError: string
@@ -13,6 +14,11 @@ export interface DesktopSettings {
 }
 
 interface DesktopAPI {
+  UpdateState(): Promise<UpdateState>
+  CheckForUpdates(): Promise<void>
+  DownloadUpdate(): Promise<void>
+  InstallUpdate(): Promise<void>
+  SetAutoCheckUpdates(enabled: boolean): Promise<void>
   DesktopSettings(): Promise<DesktopSettings>
   SetCloseToTray(enabled: boolean): Promise<void>
   SetAutostart(enabled: boolean): Promise<void>
@@ -23,6 +29,24 @@ interface DesktopAPI {
   RemoveVPNHelper(): Promise<void>
   MinimiseToTray(): Promise<void>
   Quit(): Promise<void>
+}
+
+export interface UpdateState {
+  repository: string
+  currentVersion: string
+  currentKnown: boolean
+  latestVersion: string
+  available: boolean
+  assetName: string
+  releaseUrl: string
+  checkedAt: string
+  busy: string
+  error: string
+  downloadedPath: string
+  received: number
+  total: number
+  installationMessage: string
+  backupPath: string
 }
 
 export function desktop(): DesktopAPI {

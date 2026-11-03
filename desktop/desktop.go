@@ -18,6 +18,7 @@ type DesktopSettings struct {
 	AutoConnect         bool   `json:"autoConnect"`
 	AutoConnectServerID string `json:"autoConnectServerId"`
 	AutoConnectError    string `json:"autoConnectError"`
+	AutoCheckUpdates    bool   `json:"autoCheckUpdates"`
 	Supported           bool   `json:"supported"`
 	TrayAvailable       bool   `json:"trayAvailable"`
 	TrayError           string `json:"trayError"`
@@ -46,6 +47,7 @@ func (a *App) beforeClose(ctx context.Context) bool {
 }
 
 func (a *App) domReady(ctx context.Context) {
+	integration.AcknowledgeUpdate()
 	// An autostarted app must remain visible when no tray host is available.
 	if slices.Contains(os.Args[1:], "--autostart") {
 		_ = a.MinimiseToTray()
@@ -86,6 +88,7 @@ func (a *App) DesktopSettings() (DesktopSettings, error) {
 		CloseToTray: a.preferences.CloseToTray, Autostart: autostart,
 		AutoConnect: a.preferences.AutoConnect, AutoConnectServerID: a.preferences.AutoConnectServerID,
 		AutoConnectError: a.autoConnectError,
+		AutoCheckUpdates: a.preferences.AutoCheckUpdates,
 		Supported:        integration.Supported, TrayAvailable: a.tray != nil && a.tray.Available(),
 		TrayError: a.trayError, InstalledPath: path,
 		VPNHelperAvailable: integration.VPNHelperAvailable(),

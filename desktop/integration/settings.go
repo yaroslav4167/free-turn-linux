@@ -10,6 +10,7 @@ type Preferences struct {
 	CloseToTray         bool   `json:"closeToTray"`
 	AutoConnect         bool   `json:"autoConnect"`
 	AutoConnectServerID string `json:"autoConnectServerId"`
+	AutoCheckUpdates    bool   `json:"autoCheckUpdates"`
 }
 
 func preferencesPath() (string, error) {
@@ -18,7 +19,7 @@ func preferencesPath() (string, error) {
 }
 
 func LoadPreferences() (Preferences, error) {
-	prefs := Preferences{CloseToTray: true}
+	prefs := Preferences{CloseToTray: true, AutoCheckUpdates: true}
 	path, err := preferencesPath()
 	if err != nil {
 		return prefs, err

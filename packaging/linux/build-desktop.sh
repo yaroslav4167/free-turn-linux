@@ -26,9 +26,17 @@ go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0
 gobin=$(go env GOBIN)
 if [ -z "$gobin" ]; then gobin="$(go env GOPATH)/bin"; fi
 npm --prefix desktop/frontend ci
+version=${VERSION:-$(git describe --tags --exact-match 2>/dev/null || echo dev)}
+repository=${UPDATE_REPOSITORY:-}
+case "$repository" in
+  *[!a-zA-Z0-9_./-]*) echo 'Invalid UPDATE_REPOSITORY' >&2; exit 1 ;;
+esac
+case "$version" in
+  ''|*[!a-zA-Z0-9._+-]*) echo 'Invalid VERSION' >&2; exit 1 ;;
+esac
 (
   cd desktop
-  "$gobin/wails" build -tags webkit2_41 -ldflags '-checklinkname=0 -s -w' -trimpath
+  "$gobin/wails" build -tags webkit2_41 -ldflags "-checklinkname=0 -s -w -X main.desktopVersion=$version -X main.updateRepository=$repository" -trimpath
 )
 
 # The Wails Linux post-build hook produces the helper alongside the GUI.
