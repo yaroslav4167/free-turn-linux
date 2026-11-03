@@ -23,11 +23,14 @@ const (
 // Tray implements StatusNotifierItem (KDE, GNOME AppIndicator, Xfce, etc.)
 // over the session bus without introducing a second GTK event loop.
 type Tray struct {
-	conn       *dbus.Conn
-	onShow     func()
-	onQuit     func()
-	once       sync.Once
-	registered atomic.Bool
+	conn           *dbus.Conn
+	onShow         func()
+	onQuit         func()
+	once           sync.Once
+	registered     atomic.Bool
+	iconProperties *prop.Properties
+	icons          [2][]iconPixmap
+	lightIcon      bool
 }
 
 type trayItem struct{ tray *Tray }
@@ -145,15 +148,28 @@ func (m *trayMenu) AboutToShowGroup(ids []int32) ([]int32, []int32, *dbus.Error)
 }
 
 func Start(title string, onShow, onQuit func()) (*Tray, error) {
-	icon, err := applicationIcon()
+	normalIcon, err := applicationIcon(false)
 	if err != nil {
 		return nil, fmt.Errorf("decode application icon: %w", err)
+	}
+	lightIcon, err := applicationIcon(true)
+	if err != nil {
+		return nil, fmt.Errorf("decode light tray icon: %w", err)
 	}
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		return nil, err
 	}
-	t := &Tray{conn: conn, onShow: onShow, onQuit: onQuit}
+	signals := make(chan *dbus.Signal, 16)
+	conn.Signal(signals)
+	// Theme support is optional: an unavailable portal must not disable the tray.
+	_ = conn.AddMatchSignal(dbus.WithMatchSender(portalName), dbus.WithMatchObjectPath("/org/freedesktop/portal/desktop"), dbus.WithMatchInterface(settingsInterface), dbus.WithMatchMember("SettingChanged"))
+	_ = conn.AddMatchSignal(dbus.WithMatchObjectPath("/org/freedesktop/DBus"), dbus.WithMatchInterface("org.freedesktop.DBus"), dbus.WithMatchMember("NameOwnerChanged"), dbus.WithMatchArg(0, portalName))
+	t := &Tray{conn: conn, onShow: onShow, onQuit: onQuit, icons: [2][]iconPixmap{normalIcon, lightIcon}, lightIcon: preferLightTrayIcon(conn)}
+	icon := normalIcon
+	if t.lightIcon {
+		icon = lightIcon
+	}
 	fail := func(err error) (*Tray, error) { _ = conn.Close(); return nil, err }
 	item, menu := &trayItem{t}, &trayMenu{t}
 	if err := conn.Export(item, "/StatusNotifierItem", itemInterface); err != nil {
@@ -163,7 +179,7 @@ func Start(title string, onShow, onQuit func()) (*Tray, error) {
 		return fail(err)
 	}
 	for path, iface := range map[dbus.ObjectPath]introspect.Interface{
-		"/StatusNotifierItem": {Name: itemInterface, Methods: introspect.Methods(item)},
+		"/StatusNotifierItem": {Name: itemInterface, Methods: introspect.Methods(item), Signals: []introspect.Signal{{Name: "NewIcon"}}},
 		"/MenuBar":            {Name: menuInterface, Methods: introspect.Methods(menu)},
 	} {
 		if err := conn.Export(introspect.NewIntrospectable(&introspect.Node{Interfaces: []introspect.Interface{iface, prop.IntrospectData}}), path, "org.freedesktop.DBus.Introspectable"); err != nil {
@@ -173,14 +189,16 @@ func Start(title string, onShow, onQuit func()) (*Tray, error) {
 	readonly := func(value interface{}) *prop.Prop {
 		return &prop.Prop{Value: value, Writable: false, Emit: prop.EmitConst}
 	}
-	if _, err := prop.Export(conn, "/StatusNotifierItem", prop.Map{itemInterface: {
+	iconProperties, err := prop.Export(conn, "/StatusNotifierItem", prop.Map{itemInterface: {
 		"Category": readonly("Communications"), "Id": readonly("freeturn-desktop"),
 		"Title": readonly(title), "Status": readonly("Active"),
-		"IconName": readonly(""), "IconPixmap": readonly(icon), "ItemIsMenu": readonly(false),
+		"IconName": readonly(""), "IconPixmap": {Value: icon, Writable: false, Emit: prop.EmitFalse}, "ItemIsMenu": readonly(false),
 		"Menu": readonly(dbus.ObjectPath("/MenuBar")),
-	}}); err != nil {
+	}})
+	if err != nil {
 		return fail(err)
 	}
+	t.iconProperties = iconProperties
 	if _, err := prop.Export(conn, "/MenuBar", prop.Map{menuInterface: {
 		"Version": readonly(uint32(3)), "TextDirection": readonly("ltr"),
 		"Status": readonly("normal"), "IconThemePath": readonly([]string{}),
@@ -191,13 +209,21 @@ func Start(title string, onShow, onQuit func()) (*Tray, error) {
 	if err := conn.AddMatchSignal(dbus.WithMatchObjectPath("/org/freedesktop/DBus"), dbus.WithMatchInterface("org.freedesktop.DBus"), dbus.WithMatchMember("NameOwnerChanged"), dbus.WithMatchArg(0, watcherName)); err != nil {
 		return fail(err)
 	}
-	signals := make(chan *dbus.Signal, 8)
-	conn.Signal(signals)
 	// The desktop shell may not be ready yet during login autostart. Keep
 	// listening instead of permanently losing the tray for this session.
 	_ = t.register()
 	go func() {
 		for signal := range signals {
+			if signal.Name == settingsInterface+".SettingChanged" && len(signal.Body) == 3 && signal.Body[0] == appearanceNamespace && signal.Body[1] == "color-scheme" {
+				t.updateIcon(lightIconForScheme(signal.Body[2], themeFallback()))
+			}
+			if signal.Name == "org.freedesktop.DBus.NameOwnerChanged" && len(signal.Body) == 3 && signal.Body[0] == portalName {
+				if signal.Body[2] != "" {
+					t.updateIcon(preferLightTrayIcon(conn))
+				} else {
+					t.updateIcon(themeFallback())
+				}
+			}
 			if len(signal.Body) == 3 && signal.Body[0] == watcherName {
 				t.registered.Store(false)
 				if signal.Body[2] != "" {

@@ -61,7 +61,7 @@ func TestNoTrayIsUnavailable(t *testing.T) {
 }
 
 func TestApplicationIconPixmap(t *testing.T) {
-	icons, err := applicationIcon()
+	icons, err := applicationIcon(false)
 	if err != nil {
 		t.Fatal(err)
 	}

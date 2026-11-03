@@ -16,8 +16,12 @@ type iconPixmap struct {
 	Pixels []byte
 }
 
-func applicationIcon() ([]iconPixmap, error) {
-	image, err := png.Decode(bytes.NewReader(appassets.TrayIconPNG))
+func applicationIcon(light bool) ([]iconPixmap, error) {
+	data := appassets.TrayIconPNG
+	if light {
+		data = appassets.TrayLightIconPNG
+	}
+	image, err := png.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}

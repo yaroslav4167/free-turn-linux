@@ -12,3 +12,6 @@ var IconPNG []byte
 
 //go:embed icon-64.png
 var TrayIconPNG []byte
+
+//go:embed icon-light-64.png
+var TrayLightIconPNG []byte

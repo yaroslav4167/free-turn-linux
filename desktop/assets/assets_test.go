@@ -7,13 +7,16 @@ import (
 )
 
 func TestApplicationImages(t *testing.T) {
-	for size, data := range map[int][]byte{512: IconPNG, 64: TrayIconPNG} {
-		image, err := png.Decode(bytes.NewReader(data))
+	for _, icon := range []struct {
+		size int
+		data []byte
+	}{{512, IconPNG}, {64, TrayIconPNG}, {64, TrayLightIconPNG}} {
+		image, err := png.Decode(bytes.NewReader(icon.data))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if image.Bounds().Dx() != size || image.Bounds().Dy() != size {
-			t.Fatalf("expected %dx%d icon, got %v", size, size, image.Bounds())
+		if image.Bounds().Dx() != icon.size || image.Bounds().Dy() != icon.size {
+			t.Fatalf("expected %dx%d icon, got %v", icon.size, icon.size, image.Bounds())
 		}
 	}
 	if !bytes.Contains(IconSVG, []byte("<svg")) {
