@@ -15,9 +15,6 @@ var (
 
 // ShowCaptchaNotification is a no-op / unsupported stub on non-Windows platforms.
 func ShowCaptchaNotification(captchaURL string, onOpen func()) error {
-	if onOpen != nil {
-		go onOpen()
-	}
 	return errUnsupported
 }
 

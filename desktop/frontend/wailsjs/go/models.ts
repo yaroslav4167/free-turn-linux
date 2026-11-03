@@ -1,53 +1,3 @@
-export namespace updates {
-
-	export class State {
-	    repository: string;
-	    currentVersion: string;
-	    currentKnown: boolean;
-	    latestVersion: string;
-	    available: boolean;
-	    assetName: string;
-	    releaseUrl: string;
-	    checkedAt: string;
-	    busy: string;
-	    phase: string;
-	    bytesPerSecond: number;
-	    remainingSeconds: number;
-	    error: string;
-	    downloadedPath: string;
-	    received: number;
-	    total: number;
-	    installationMessage: string;
-	    backupPath: string;
-
-	    static createFrom(source: any = {}) {
-	        return new State(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.repository = source["repository"];
-	        this.currentVersion = source["currentVersion"];
-	        this.currentKnown = source["currentKnown"];
-	        this.latestVersion = source["latestVersion"];
-	        this.available = source["available"];
-	        this.assetName = source["assetName"];
-	        this.releaseUrl = source["releaseUrl"];
-	        this.checkedAt = source["checkedAt"];
-	        this.busy = source["busy"];
-	        this.phase = source["phase"];
-	        this.bytesPerSecond = source["bytesPerSecond"];
-	        this.remainingSeconds = source["remainingSeconds"];
-	        this.error = source["error"];
-	        this.downloadedPath = source["downloadedPath"];
-	        this.received = source["received"];
-	        this.total = source["total"];
-	        this.installationMessage = source["installationMessage"];
-	        this.backupPath = source["backupPath"];
-	    }
-	}
-}
-
 export namespace backend {
 	
 	export class GuestShare {
@@ -126,6 +76,7 @@ export namespace backend {
 	    wgClientConf?: string;
 	    wgPort?: number;
 	    connMode?: string;
+	    routingLists: routing.List[];
 	    // Go type: time
 	    createdAt: any;
 	
@@ -162,6 +113,7 @@ export namespace backend {
 	        this.wgClientConf = source["wgClientConf"];
 	        this.wgPort = source["wgPort"];
 	        this.connMode = source["connMode"];
+	        this.routingLists = this.convertValues(source["routingLists"], routing.List);
 	        this.createdAt = this.convertValues(source["createdAt"], null);
 	    }
 	
@@ -311,9 +263,7 @@ export namespace main {
 	    autoConnectServerId: string;
 	    autoConnectError: string;
 	    autoCheckUpdates: boolean;
-	    renderingMode: string;
-	    activeRenderingMode: string;
-	    renderingRestartRequired: boolean;
+	    renderingNote: string;
 	    supported: boolean;
 	    trayAvailable: boolean;
 	    trayError: string;
@@ -332,14 +282,35 @@ export namespace main {
 	        this.autoConnectServerId = source["autoConnectServerId"];
 	        this.autoConnectError = source["autoConnectError"];
 	        this.autoCheckUpdates = source["autoCheckUpdates"];
-	        this.renderingMode = source["renderingMode"];
-	        this.activeRenderingMode = source["activeRenderingMode"];
-	        this.renderingRestartRequired = source["renderingRestartRequired"];
+	        this.renderingNote = source["renderingNote"];
 	        this.supported = source["supported"];
 	        this.trayAvailable = source["trayAvailable"];
 	        this.trayError = source["trayError"];
 	        this.installedPath = source["installedPath"];
 	        this.vpnHelperAvailable = source["vpnHelperAvailable"];
+	    }
+	}
+
+}
+
+export namespace routing {
+
+	export class List {
+	    name: string;
+	    enabled: boolean;
+	    mode: string;
+	    entries: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new List(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.enabled = source["enabled"];
+	        this.mode = source["mode"];
+	        this.entries = source["entries"];
 	    }
 	}
 
@@ -563,6 +534,57 @@ export namespace serversetup {
 	        this.port = source["port"];
 	        this.clientConf = source["clientConf"];
 	        this.existed = source["existed"];
+	    }
+	}
+
+}
+
+export namespace updates {
+
+	export class State {
+	    repository: string;
+	    currentVersion: string;
+	    currentKnown: boolean;
+	    latestVersion: string;
+	    available: boolean;
+	    assetName: string;
+	    releaseUrl: string;
+	    checkedAt: string;
+	    busy: string;
+	    phase: string;
+	    bytesPerSecond: number;
+	    remainingSeconds: number;
+	    error: string;
+	    downloadedPath: string;
+	    received: number;
+	    total: number;
+	    installationMessage: string;
+	    backupPath: string;
+
+	    static createFrom(source: any = {}) {
+	        return new State(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.repository = source["repository"];
+	        this.currentVersion = source["currentVersion"];
+	        this.currentKnown = source["currentKnown"];
+	        this.latestVersion = source["latestVersion"];
+	        this.available = source["available"];
+	        this.assetName = source["assetName"];
+	        this.releaseUrl = source["releaseUrl"];
+	        this.checkedAt = source["checkedAt"];
+	        this.busy = source["busy"];
+	        this.phase = source["phase"];
+	        this.bytesPerSecond = source["bytesPerSecond"];
+	        this.remainingSeconds = source["remainingSeconds"];
+	        this.error = source["error"];
+	        this.downloadedPath = source["downloadedPath"];
+	        this.received = source["received"];
+	        this.total = source["total"];
+	        this.installationMessage = source["installationMessage"];
+	        this.backupPath = source["backupPath"];
 	    }
 	}
 

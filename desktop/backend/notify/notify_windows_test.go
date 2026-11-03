@@ -26,8 +26,8 @@ func TestShowCaptchaNotificationThrottling(t *testing.T) {
 	}
 
 	time.Sleep(50 * time.Millisecond)
-	if called > 1 {
-		t.Fatalf("expected onOpen to be called at most once due to throttling, called %d times", called)
+	if called != 0 {
+		t.Fatalf("showing notifications must not open the browser, called %d times", called)
 	}
 }
 

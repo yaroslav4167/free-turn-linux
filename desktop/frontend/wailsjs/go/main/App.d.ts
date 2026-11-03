@@ -5,19 +5,9 @@ import {main} from '../models';
 import {serversetup} from '../models';
 import {updates} from '../models';
 
-export function CheckForUpdates():Promise<void>;
-
-export function DownloadUpdate():Promise<void>;
-
-export function InstallUpdate():Promise<void>;
-
-export function SetAutoCheckUpdates(arg1:boolean):Promise<void>;
-
-export function SetRenderingMode(arg1:string):Promise<void>;
-
-export function UpdateState():Promise<updates.State>;
-
 export function BuildLink(arg1:backend.Server):Promise<string>;
+
+export function CheckForUpdates():Promise<void>;
 
 export function ConfigCommand(arg1:string):Promise<string>;
 
@@ -35,6 +25,8 @@ export function DesktopSettings():Promise<main.DesktopSettings>;
 
 export function Disconnect():Promise<void>;
 
+export function DownloadUpdate():Promise<void>;
+
 export function GenerateClientID():Promise<string>;
 
 export function GenerateObfKey():Promise<string>;
@@ -42,6 +34,8 @@ export function GenerateObfKey():Promise<string>;
 export function ImportLink(arg1:string,arg2:backend.Server):Promise<backend.Server>;
 
 export function InstallDesktop():Promise<string>;
+
+export function InstallUpdate():Promise<void>;
 
 export function InstallVPNHelper():Promise<void>;
 
@@ -77,9 +71,11 @@ export function ServerStop(arg1:string):Promise<void>;
 
 export function ServerUninstall(arg1:string,arg2:boolean):Promise<serversetup.UninstallResult>;
 
-export function SetAutostart(arg1:boolean):Promise<void>;
+export function SetAutoCheckUpdates(arg1:boolean):Promise<void>;
 
 export function SetAutoConnect(arg1:boolean,arg2:string):Promise<void>;
+
+export function SetAutostart(arg1:boolean):Promise<void>;
 
 export function SetCloseToTray(arg1:boolean):Promise<void>;
 
@@ -98,5 +94,7 @@ export function SetupWgSetup(arg1:serversetup.SSHConfig,arg2:number,arg3:string)
 export function ShowWindow():Promise<void>;
 
 export function Status():Promise<backend.Status>;
+
+export function UpdateState():Promise<updates.State>;
 
 export function VPNAvailable():Promise<boolean>;

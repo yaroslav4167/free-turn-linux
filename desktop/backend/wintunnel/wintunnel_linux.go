@@ -36,6 +36,10 @@ func (p linuxProtector) Protect(fd int) bool {
 }
 
 func Connect(configJSON, wgConfigText string, mtu int, exclusionIPs ...string) (err error) {
+	return ConnectWithRoutes(configJSON, wgConfigText, mtu, "", exclusionIPs...)
+}
+
+func ConnectWithRoutes(configJSON, wgConfigText string, mtu int, routes string, exclusionIPs ...string) (err error) {
 	mu.Lock()
 	if active != nil || connecting {
 		mu.Unlock()
@@ -56,6 +60,9 @@ func Connect(configJSON, wgConfigText string, mtu int, exclusionIPs ...string) (
 	params, err := mobile.ParseTunnelConfig(wgConfigText, mtu)
 	if err != nil {
 		return err
+	}
+	if routes != "" {
+		params.AllowedIPs = routes
 	}
 	client, tunFD, dev4, dev6, err := startHelper(params)
 	if err != nil {

@@ -63,7 +63,7 @@ export default function Connection({
       <div className={'connection-center ' + presentation.visualState}>
         <span className={'mode-badge' + (connected ? ' is-connected' : '')}>
           {connected ? <span className="connection-indicator" aria-hidden="true" /> : <Icon name="shield" size={14} />}
-          {connected ? 'Соединение активно' : vpn ? 'VPN · весь трафик' : 'TURN · режим реле'}
+          {connected ? 'Соединение активно' : vpn ? selected?.routingLists?.some((list) => list.enabled) ? 'VPN · списки маршрутизации' : 'VPN · маршруты профиля' : 'TURN · режим реле'}
         </span>
         <button
           className={'power-button' + (active ? ' is-active' : '')}

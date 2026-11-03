@@ -29,23 +29,23 @@ var errNoSSHConfig = errors.New("для этого сервера нет сох�
 // App is the Wails-bound facade the frontend calls into. It stays thin - all
 // real logic lives in backend, so it can be unit-tested without a Wails runtime.
 type App struct {
-	ctx                 context.Context
-	store               *backend.Store
-	engine              *backend.Engine
-	desktopMu           sync.Mutex
-	preferences         integration.Preferences
-	activeRenderingMode string
-	tray                *tray.Tray
-	trayError           string
-	quitting            bool
-	autoConnectOnce     sync.Once
-	autoConnectError    string
-	updater             *updates.Manager
-	updateCancel        context.CancelFunc
-	updateContext       context.Context
-	updateInstallMu     sync.Mutex
-	updateInstallGate   *os.File
-	updateResult        integration.UpdateResult
+	ctx               context.Context
+	store             *backend.Store
+	engine            *backend.Engine
+	desktopMu         sync.Mutex
+	preferences       integration.Preferences
+	renderingNote     string
+	tray              *tray.Tray
+	trayError         string
+	quitting          bool
+	autoConnectOnce   sync.Once
+	autoConnectError  string
+	updater           *updates.Manager
+	updateCancel      context.CancelFunc
+	updateContext     context.Context
+	updateInstallMu   sync.Mutex
+	updateInstallGate *os.File
+	updateResult      integration.UpdateResult
 }
 
 func NewApp() *App {
@@ -61,9 +61,8 @@ func NewApp() *App {
 	}
 	return &App{
 		store: store, engine: backend.NewEngine(store), preferences: prefs,
-		updater:             updates.New(desktopVersion, runtime.GOARCH, updateRepository),
-		updateResult:        integration.LoadUpdateResult(),
-		activeRenderingMode: initialRenderingMode(prefs.RenderingMode, os.Args[1:]),
+		updater:      updates.New(desktopVersion, runtime.GOARCH, updateRepository),
+		updateResult: integration.LoadUpdateResult(),
 	}
 }
 

@@ -73,7 +73,9 @@ func main() {
 		return
 	}
 	// Create an instance of the app structure
+	rendering := configureRendering(os.Args[1:])
 	app := NewApp()
+	app.renderingNote = rendering.note
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -90,7 +92,7 @@ func main() {
 		Linux: &linux.Options{
 			Icon:             appassets.IconPNG,
 			ProgramName:      "freeturn",
-			WebviewGpuPolicy: webviewGPUPolicy(app.activeRenderingMode),
+			WebviewGpuPolicy: rendering.policy,
 		},
 		OnStartup:     app.startup,
 		OnShutdown:    app.shutdown,

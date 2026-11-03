@@ -60,9 +60,7 @@ select optgroup {
   grid-template-columns: 102px minmax(0, 1fr);
   height: 100vh;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 62% 10%, #34334820, transparent 54%),
-    radial-gradient(ellipse at 80% 95%, #29384d12, transparent 50%), var(--bg);
+  background: var(--bg);
 }
 
 /* --- Sidebar --- */
@@ -267,6 +265,29 @@ select optgroup {
 .field-group {
   margin-bottom: 20px;
 }
+.routing-list {
+  min-width: 0;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.routing-list legend {
+  padding: 0 6px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.routing-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+.vpn-routing-lists > .notice {
+  margin-top: 14px;
+}
 
 .field-group h3 {
   font-size: 11px;
@@ -369,7 +390,7 @@ select optgroup {
 }
 
 .btn.primary:hover {
-  filter: brightness(1.08);
+  background: #d9def0;
 }
 
 .btn.danger {
@@ -630,18 +651,6 @@ select optgroup {
 
 /* --- Application navigation --- */
 
-button,
-select,
-input,
-textarea {
-  transition:
-    background-color 150ms ease,
-    border-color 150ms ease,
-    box-shadow 150ms ease,
-    color 150ms ease,
-    transform 180ms ease;
-}
-
 button:focus-visible,
 select:focus-visible,
 input:focus-visible,
@@ -658,14 +667,11 @@ button:disabled {
 }
 
 .navigation {
-  background: #1c1d25b8;
-  border: 1px solid #ffffff0c;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 22px;
   margin: 18px 12px 18px 16px;
   padding: 12px 10px 18px;
-  box-shadow: 0 12px 35px #0002;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -742,8 +748,7 @@ button:disabled {
 .update-notice-actions {
   flex-shrink: 0;
 }
-.autoconnect-profile,
-.rendering-mode-field {
+.autoconnect-profile {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -784,7 +789,6 @@ button:disabled {
   background: #d2d5e1;
   border-color: #e3e5ed;
   color: #20212a;
-  box-shadow: 0 3px 12px #0002;
 }
 .nav-footer {
   margin-top: 20px;
@@ -912,7 +916,7 @@ button:disabled {
   border-radius: 30px;
   font-size: 11px;
   color: var(--text-dim);
-  background: #1c1d2480;
+  background: #1c1d24;
 }
 .power-button {
   position: relative;
@@ -922,40 +926,24 @@ button:disabled {
   border-radius: 44px;
   border: 1px solid #474953;
   color: #e2e3eb;
-  background: linear-gradient(145deg, #30313a, #202129);
-  box-shadow:
-    0 0 0 9px #ffffff02,
-    0 0 0 10px #ffffff06,
-    0 16px 42px #0003,
-    inset 0 1px 0 #ffffff06;
+  background: #292b35;
   display: flex;
   flex-direction: column;
   gap: 12px;
   align-items: center;
   justify-content: center;
-  transition:
-    box-shadow 200ms ease,
-    transform 200ms ease;
   flex-shrink: 0;
 }
 .power-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow:
-    0 0 0 10px #ffffff04,
-    0 0 0 11px #ffffff0b,
-    0 18px 50px #0004;
+  border-color: var(--accent);
 }
 .power-button:disabled {
   opacity: 0.4;
 }
 .connected .power-button {
-  background: linear-gradient(145deg, #2e4b3e, #20372d);
+  background: #284033;
   color: #d2f4df;
   border-color: #6eae88;
-  box-shadow:
-    0 0 0 9px #7ecb9e04,
-    0 0 0 10px #7ecb9e15,
-    0 0 50px #7ecb9e0c;
 }
 .connected h2 {
   color: #b9e3ca;
@@ -975,7 +963,6 @@ button:disabled {
   height: 6px;
   border-radius: 50%;
   background: #91d0ab;
-  box-shadow: 0 0 9px #91d0ab40;
 }
 .error .power-button {
   color: #f59d95;
@@ -1019,8 +1006,8 @@ button:disabled {
 .traffic-card {
   position: relative;
   overflow: hidden;
-  background: #20212b80;
-  border: 1px solid #ffffff0b;
+  background: #20212b;
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px 18px;
 }
@@ -1068,8 +1055,8 @@ button:disabled {
   width: 100%;
   max-width: 440px;
   padding: 10px 12px 10px 18px;
-  background: #22232d90;
-  border: 1px solid #ffffff10;
+  background: #22232d;
+  border: 1px solid var(--border);
   border-radius: 16px;
   margin: 20px auto 0;
   color: var(--text-dim);
@@ -1098,8 +1085,8 @@ button:disabled {
   margin-bottom: 30px;
 }
 .settings-card {
-  background: #20212a80;
-  border: 1px solid #ffffff0c;
+  background: #20212a;
+  border: 1px solid var(--border);
   border-radius: 15px;
   padding: 24px;
   margin-bottom: 18px;
@@ -1157,7 +1144,6 @@ button:disabled {
   background: #a0a1ae;
   left: 3px;
   top: 3px;
-  transition: transform 150ms ease;
 }
 .preference-row input:checked {
   background: #626b88;
@@ -1214,91 +1200,7 @@ button:disabled {
   overflow: hidden;
 }
 
-/* Subtle compositor-friendly ambient motion, independent of VPN polling. */
-.app-shell {
-  position: relative;
-  isolation: isolate;
-}
-.app-shell::before,
-.app-shell::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  width: 70vw;
-  height: 85vh;
-  pointer-events: none;
-  background: radial-gradient(ellipse, #77769a15, #45475e08 40%, transparent 70%);
-  animation: ambient-drift 24s ease-in-out infinite alternate;
-}
-.app-shell::before {
-  left: 8%;
-  top: -25%;
-}
-.app-shell::after {
-  right: -20%;
-  bottom: -32%;
-  background: radial-gradient(ellipse, #6c86b015, #353b5b08 40%, transparent 70%);
-  animation-duration: 30s;
-  animation-delay: -12s;
-}
-
-.settings-page,
-.logs-page,
-.profiles-page {
-  animation: page-arrive 280ms cubic-bezier(0.22, 0.7, 0.3, 1) both;
-}
-.connection-page {
-  animation: backdrop-arrive 180ms ease-out both;
-}
-.traffic-card,
-.settings-card {
-  animation: panel-arrive 400ms cubic-bezier(0.22, 0.7, 0.3, 1) both;
-}
-.traffic-card:nth-child(2),
-.settings-card:nth-child(2) {
-  animation-delay: 45ms;
-}
-.traffic-card:nth-child(3),
-.settings-card:nth-child(3) {
-  animation-delay: 90ms;
-}
-.modal-backdrop {
-  animation: backdrop-arrive 160ms ease-out both;
-}
-.modal {
-  animation: panel-arrive 220ms cubic-bezier(0.22, 0.7, 0.3, 1) both;
-}
-
-.nav-item > svg {
-  transition: transform 180ms ease;
-}
-.nav-item:hover > svg {
-  transform: translateY(-1px) scale(1.05);
-}
-.nav-item:active > svg {
-  transform: scale(0.94);
-}
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-.btn:active:not(:disabled) {
-  transform: scale(0.98);
-}
-.power-button:active:not(:disabled) {
-  transform: scale(0.96);
-}
-.power-button::after {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-  opacity: 0;
-}
-.power-button::after {
-  inset: -5px;
-  border-radius: 49px;
-  border: 1px solid #c7cde425;
-  box-shadow: 0 0 35px #bec7ff0d;
-}
+/* Only the active connection indicator animates; idle screens remain static. */
 .power-progress {
   position: absolute;
   inset: -1px;
@@ -1318,79 +1220,12 @@ button:disabled {
 .power-button[aria-busy='true'] .power-progress-path {
   animation: connection-trace 1.8s linear infinite;
 }
-.connected .power-button::after {
-  opacity: 0.28;
-  border-color: #91d0ab45;
-  box-shadow: 0 0 30px #91d0ab10;
-}
-.traffic-line {
-  stroke-dasharray: 1;
-  animation: chart-draw 750ms ease-out both;
-}
-.traffic-area {
-  animation: chart-fill 600ms ease-out both;
-}
-
-@keyframes ambient-drift {
-  from {
-    transform: translate3d(-3%, -2%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(8%, 6%, 0) scale(1.12);
-  }
-}
-@keyframes page-arrive {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-    filter: blur(2px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-}
-@keyframes panel-arrive {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes backdrop-arrive {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
 @keyframes connection-trace {
   from {
     stroke-dashoffset: 0;
   }
   to {
     stroke-dashoffset: -1;
-  }
-}
-@keyframes chart-draw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-@keyframes chart-fill {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.3;
   }
 }
 @media (prefers-reduced-motion: reduce) {

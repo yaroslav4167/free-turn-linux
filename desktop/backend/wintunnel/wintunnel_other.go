@@ -12,6 +12,10 @@ func Connect(configJSON, wgConfigText string, mtu int, exclusionIPs ...string) e
 	return errUnsupported
 }
 
+func ConnectWithRoutes(configJSON, wgConfigText string, mtu int, routes string, exclusionIPs ...string) error {
+	return errUnsupported
+}
+
 func Disconnect() {}
 
 func RunHelper(string) error { return errUnsupported }

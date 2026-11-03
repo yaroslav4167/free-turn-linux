@@ -149,6 +149,10 @@ func ensureWintunDLL() error {
 // host routes (/32) are installed via the physical default gateway so that server
 // control and SSH remain reachable while the VPN is active.
 func Connect(configJSON, wgConfigText string, mtu int, exclusionIPs ...string) error {
+	return ConnectWithRoutes(configJSON, wgConfigText, mtu, "", exclusionIPs...)
+}
+
+func ConnectWithRoutes(configJSON, wgConfigText string, mtu int, routeOverride string, exclusionIPs ...string) error {
 	mu.Lock()
 	alreadyActive := active != nil
 	mu.Unlock()
@@ -169,6 +173,9 @@ func Connect(configJSON, wgConfigText string, mtu int, exclusionIPs ...string) e
 	params, err := mobile.ParseTunnelConfig(wgConfigText, mtu)
 	if err != nil {
 		return fmt.Errorf("parse tunnel config: %w", err)
+	}
+	if routeOverride != "" {
+		params.AllowedIPs = routeOverride
 	}
 
 	// Capture the machine's current (pre-tunnel) default gateway before we

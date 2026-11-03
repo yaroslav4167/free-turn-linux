@@ -4,17 +4,15 @@ import {readFileSync} from 'node:fs'
 
 const read = (path) => readFileSync(new URL('../../../' + path, import.meta.url), 'utf8')
 
-test('native WebKit startup uses the renderer chosen for this launch', () => {
+test('native WebKit startup configures compatibility before creating the window', () => {
   const main = read('desktop/main.go')
-  assert.match(main, /WebviewGpuPolicy:\s+webviewGPUPolicy\(app\.activeRenderingMode\)/)
+  assert.match(main, /WebviewGpuPolicy:\s+rendering\.policy/)
+  assert.ok(main.indexOf('configureRendering(os.Args[1:])') < main.indexOf('wails.Run('))
   assert.doesNotMatch(main, /WebviewGpuPolicy:\s+linux\.WebviewGpuPolicyNever/)
 })
 
-test('settings expose renderer modes with an explicit restart notice', () => {
+test('renderer selection is removed and compatibility notes remain visible', () => {
   const component = read('desktop/frontend/src/components/DesktopPreferences.tsx')
-  for (const mode of ['auto', 'hardware', 'software']) assert.ok(component.includes(`value="${mode}"`))
-  assert.match(component, /SetRenderingMode\(e\.target\.value\)/)
-  assert.match(component, /settings\.activeRenderingMode/)
-  assert.match(component, /settings\.renderingRestartRequired/)
-  assert.match(component, /Закрытие окна в трей не считается перезапуском/)
+  assert.doesNotMatch(component, /SetRenderingMode|rendering-mode-field|settings\.renderingMode/)
+  assert.match(component, /settings\.renderingNote/)
 })

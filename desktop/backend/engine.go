@@ -3,11 +3,13 @@ package backend
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"time"
 
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/notify"
+	"github.com/samosvalishe/free-turn-proxy/desktop/backend/routing"
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/wintunnel"
 	"github.com/samosvalishe/free-turn-proxy/mobile"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -47,9 +49,11 @@ type Engine struct {
 	ctx   context.Context
 	store *Store
 
-	mu       sync.Mutex
-	serverID string
-	traffic  trafficMeter
+	mu         sync.Mutex
+	serverID   string
+	traffic    trafficMeter
+	planCancel context.CancelFunc
+	captchaURL string
 }
 
 func NewEngine(store *Store) *Engine {
@@ -76,6 +80,18 @@ func (e *Engine) SetContext(ctx context.Context) {
 }
 
 func (e *Engine) Connect(srv Server) error {
+	e.mu.Lock()
+	if e.planCancel != nil {
+		e.planCancel()
+	}
+	ctx := e.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	e.planCancel = cancel
+	e.mu.Unlock()
+	defer cancel()
 	if srv.Peer == "" {
 		return errors.New("peer is required")
 	}
@@ -89,6 +105,29 @@ func (e *Engine) Connect(srv Server) error {
 	}
 	if verr := mobile.ValidateConfig(cfg); verr != "" {
 		return errors.New(verr)
+	}
+	var routeOverride string
+	var exclusions []string
+	if vpn {
+		if srv.SSH != nil && srv.SSH.IP != "" {
+			exclusions = append(exclusions, srv.SSH.IP)
+		}
+		if host, _, splitErr := net.SplitHostPort(srv.Peer); splitErr == nil && net.ParseIP(host) != nil {
+			if srv.SSH == nil || host != srv.SSH.IP {
+				exclusions = append(exclusions, host)
+			}
+		}
+		params, parseErr := mobile.ParseTunnelConfig(srv.WgClientConf, DefaultTunnelMTU)
+		if parseErr != nil {
+			return parseErr
+		}
+		routeOverride, err = routing.Build(ctx, params.AllowedIPs, params.DNS, srv.RoutingLists, nil, exclusions...)
+		if err != nil {
+			return fmt.Errorf("списки маршрутизации VPN: %w", err)
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	// Unconditionally clear whatever might already be running, including a
@@ -104,27 +143,28 @@ func (e *Engine) Connect(srv Server) error {
 	e.mu.Unlock()
 
 	if vpn {
-		var exclusions []string
-		if srv.SSH != nil && srv.SSH.IP != "" {
-			exclusions = append(exclusions, srv.SSH.IP)
+		if err := ctx.Err(); err != nil {
+			return err
 		}
-		if srv.Peer != "" {
-			if host, _, err := net.SplitHostPort(srv.Peer); err == nil && net.ParseIP(host) != nil {
-				if srv.SSH == nil || host != srv.SSH.IP {
-					exclusions = append(exclusions, host)
-				}
-			}
-		}
-		return wintunnel.Connect(cfg, srv.WgClientConf, DefaultTunnelMTU, exclusions...)
+		return wintunnel.ConnectWithRoutes(cfg, srv.WgClientConf, DefaultTunnelMTU, routeOverride, exclusions...)
 	}
 	return mobile.Start(cfg)
 }
 
 func (e *Engine) Disconnect() {
+	e.mu.Lock()
+	if e.planCancel != nil {
+		e.planCancel()
+		e.planCancel = nil
+	}
+	e.mu.Unlock()
 	e.forceStop()
 }
 
 func (e *Engine) forceStop() {
+	e.mu.Lock()
+	e.captchaURL = ""
+	e.mu.Unlock()
 	mobile.Stop()
 	wintunnel.Disconnect()
 }
@@ -163,6 +203,11 @@ func (e *Engine) ConfigCommand(srv Server) (string, error) {
 // --- mobile.EventSink ---
 
 func (e *Engine) OnState(state string, streams, total int, errMsg string) {
+	if state == mobile.StateIdle || state == mobile.StateError {
+		e.mu.Lock()
+		e.captchaURL = ""
+		e.mu.Unlock()
+	}
 	if e.ctx == nil {
 		return
 	}
@@ -183,10 +228,24 @@ func (e *Engine) OnCaptcha(url string) {
 	if e.ctx == nil {
 		return
 	}
+	e.mu.Lock()
+	e.captchaURL = url
+	e.mu.Unlock()
 	wailsruntime.EventsEmit(e.ctx, eventCaptcha, url)
 	if url != "" {
 		go func() {
-			_ = notify.ShowCaptchaNotification(url, nil)
+			_ = notify.ShowCaptchaNotification(url, func() {
+				e.openCurrentCaptcha(url, func() { wailsruntime.BrowserOpenURL(e.ctx, url) })
+			})
 		}()
+	}
+}
+
+func (e *Engine) openCurrentCaptcha(url string, open func()) {
+	e.mu.Lock()
+	current := url != "" && e.captchaURL == url
+	e.mu.Unlock()
+	if current && open != nil {
+		open()
 	}
 }

@@ -4,6 +4,7 @@ import ServerForm from './ServerForm'
 import ServerManagement from './ServerManagement'
 import PeersPanel from './PeersPanel'
 import LogConsole, {LogEntry} from './LogConsole'
+import VPNRoutingLists from './VPNRoutingLists'
 
 const STATE_LABEL: Record<string, string> = {
   idle: 'Отключено',
@@ -125,7 +126,7 @@ export default function ServerDetail({
           </div>
         )}
         {isActive && state === 'connected' && isVPN && (
-          <div className="notice info">VPN включён — весь трафик идёт через {server.peer}.</div>
+          <div className="notice info">VPN включён через {server.peer}{server.routingLists?.some((list) => list.enabled) ? ' · применены списки маршрутизации' : ''}.</div>
         )}
         {isActive && state === 'connected' && !isVPN && (
           <div className="notice info">
@@ -138,6 +139,7 @@ export default function ServerDetail({
         {server.ssh && <PeersPanel server={server} />}
 
         <ServerForm value={server} onChange={onChange} />
+        {isVPN && <VPNRoutingLists server={server} onChange={onChange} disabled={isActive && state !== 'idle' && state !== 'error'} />}
 
         <div className="field-group">
           <div className="inline-actions">
