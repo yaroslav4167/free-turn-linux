@@ -41,6 +41,9 @@ export interface UpdateState {
   releaseUrl: string
   checkedAt: string
   busy: string
+  phase: string
+  bytesPerSecond: number
+  remainingSeconds: number
   error: string
   downloadedPath: string
   received: number

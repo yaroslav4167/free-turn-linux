@@ -10,6 +10,9 @@ export namespace updates {
 	    releaseUrl: string;
 	    checkedAt: string;
 	    busy: string;
+	    phase: string;
+	    bytesPerSecond: number;
+	    remainingSeconds: number;
 	    error: string;
 	    downloadedPath: string;
 	    received: number;
@@ -32,6 +35,9 @@ export namespace updates {
 	        this.releaseUrl = source["releaseUrl"];
 	        this.checkedAt = source["checkedAt"];
 	        this.busy = source["busy"];
+	        this.phase = source["phase"];
+	        this.bytesPerSecond = source["bytesPerSecond"];
+	        this.remainingSeconds = source["remainingSeconds"];
 	        this.error = source["error"];
 	        this.downloadedPath = source["downloadedPath"];
 	        this.received = source["received"];

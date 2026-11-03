@@ -68,6 +68,7 @@ func (m *Manager) PrepareInstall(ctx context.Context, targetDir string) (stage s
 	if err = m.download(ctx, archive, state.LatestVersion); err != nil {
 		return "", err
 	}
+	m.setPhase("extracting")
 	if err = stageArchive(ctx, archive, stage, state.LatestVersion, m.arch); err != nil {
 		return "", err
 	}

@@ -2,19 +2,27 @@ import {useEffect, useState} from 'react'
 import {desktop, UpdateState} from '../desktop'
 import Icon from './Icon'
 import {readDismissedUpdate, saveDismissedUpdate, updateNoticeId} from '../updateNotice'
+import {updateProgress, UpdateAction} from '../updateProgress'
 
 function useUpdateState(interval: number) {
   const [state, setState] = useState<UpdateState | null>(null)
   useEffect(() => {
     let active = true
-    const refresh = () => desktop().UpdateState()
-      .then((next) => { if (active) setState(next) })
-      .catch(() => {})
+    let timer: number | undefined
+    const refresh = async () => {
+      try {
+        const next = await desktop().UpdateState()
+        if (active) setState(next)
+      } catch {
+        // The local bridge can disappear while the application restarts.
+      } finally {
+        if (active) timer = window.setTimeout(refresh, interval)
+      }
+    }
     refresh()
-    const timer = window.setInterval(refresh, interval)
     return () => {
       active = false
-      window.clearInterval(timer)
+      window.clearTimeout(timer)
     }
   }, [interval])
   return state
@@ -51,21 +59,22 @@ export default function UpdatePreferences({autoCheck, onAutoCheck, disabled, can
   disabled: boolean
   canInstall: boolean
 }) {
-  const state = useUpdateState(1000)
-  const [pending, setPending] = useState(false)
+  const state = useUpdateState(500)
+  const [pending, setPending] = useState<UpdateAction | null>(null)
   const [error, setError] = useState('')
-  const run = async (action: () => Promise<void>) => {
-    setPending(true)
+  const run = async (operation: UpdateAction, action: () => Promise<void>) => {
+    setPending(operation)
     setError('')
     try {
       await action()
     } catch (e) {
       setError(String(e))
     } finally {
-      setPending(false)
+      setPending(null)
     }
   }
-  const busy = pending || !!state?.busy
+  const busy = pending !== null || !!state?.busy
+  const progress = updateProgress(state, pending)
   return (
     <div className="settings-card">
       <h2>
@@ -101,36 +110,47 @@ export default function UpdatePreferences({autoCheck, onAutoCheck, disabled, can
             ? `Доступна версия ${state.latestVersion}` : 'У вас актуальная или более новая версия'}
         </p>
       )}
-      {(error || state?.error) && (
+      {(error || (!busy && state?.error)) && (
         <div className="notice error" role="alert">{error || state?.error}</div>
       )}
       <div className="inline-actions update-actions">
-        <button className="btn" disabled={busy || !state?.repository} onClick={() => run(() => desktop().CheckForUpdates())}>
+        <button className="btn" disabled={busy || !state?.repository} onClick={() => run('checking', () => desktop().CheckForUpdates())}>
           {state?.busy === 'checking' ? 'Проверка…' : 'Проверить обновления'}
         </button>
         {state?.available && (
-          <button className="btn primary" disabled={busy || !canInstall} onClick={() => run(() => desktop().InstallUpdate())}>
-            {state.busy === 'preparing' ? 'Подготовка обновления…' : 'Скачать и установить'}
+          <button className="btn primary" disabled={busy || !canInstall} onClick={() => run('installing', () => desktop().InstallUpdate())}>
+            {pending === 'installing' || state.busy === 'preparing' || state.busy === 'restarting' ? 'Подготовка обновления…' : 'Скачать и установить'}
           </button>
         )}
         {state?.available && (
-          <button className="btn primary" disabled={busy} onClick={() => run(() => desktop().DownloadUpdate())}>
+          <button className="btn primary" disabled={busy} onClick={() => run('downloading', () => desktop().DownloadUpdate())}>
             <Icon name="download" size={17} /> {state.busy === 'downloading' ? 'Скачивание…' : `Скачать ${state.latestVersion}`}
           </button>
         )}
       </div>
-      {(state?.busy === 'downloading' || state?.busy === 'preparing') && state.total > 0 && (
-        <p role="status">
-          Скачано {Math.min(100, Math.round(state.received / state.total * 100))}%
-          <progress className="update-progress" aria-label="Скачивание обновления" max={state.total} value={state.received} />
-        </p>
+      {progress && (
+        <section className="update-task" aria-label="Ход обновления" aria-busy="true">
+          <div className="update-task-heading">
+            <strong role="status">{progress.title}</strong>
+            {progress.percent !== null && <span className="mono">{progress.percent}%</span>}
+          </div>
+          <progress className="update-progress" aria-label={progress.title} max={100} value={progress.percent ?? undefined} />
+          {progress.transfer && (
+            <div className="update-task-stats">
+              <span>{progress.transfer}</span>
+              <span>{progress.speed}</span>
+              <span>{progress.eta}</span>
+            </div>
+          )}
+          <p className="settings-note">{progress.detail}</p>
+        </section>
       )}
-      {state?.downloadedPath && (
+      {state?.downloadedPath && !busy && (
         <div className="notice info" role="status">
           Архив проверен по SHA-256 и сохранён: <span className="mono update-path">{state.downloadedPath}</span>
         </div>
       )}
-      {state?.installationMessage && (
+      {state?.installationMessage && !busy && (
         <div className="notice info" role="status">
           {state.installationMessage}
           {state.backupPath && <p className="mono update-path">Резервная копия: {state.backupPath}</p>}

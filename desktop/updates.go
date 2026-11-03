@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -95,16 +96,27 @@ func (a *App) InstallUpdate() error {
 	answer, err := wailsruntime.MessageDialog(a.ctx, wailsruntime.MessageDialogOptions{
 		Type: wailsruntime.QuestionDialog, Title: "Установить обновление FreeTurn?",
 		Message: "Скачать и проверить " + state.LatestVersion + ", отключить VPN и перезапустить клиент?\nБинарники будут установлены в " + filepath.Dir(target) + ".\nПредыдущая пара сохранится для отката. Профили и настройки сохранятся. Системный VPN-helper автоматически не заменяется.",
-		Buttons: []string{"Установить и перезапустить", "Отмена"}, DefaultButton: "Отмена", CancelButton: "Отмена",
+		// Wails on Linux uses GTK's Yes/No buttons and returns "Yes"/"No"
+		// regardless of the displayed locale or custom button labels.
+		Buttons: []string{"Yes", "No"}, DefaultButton: "No", CancelButton: "No",
 	})
-	if err != nil || answer != "Установить и перезапустить" {
+	if err != nil {
+		return err
+	}
+	confirmed, err := updateInstallationConfirmed(answer)
+	if err != nil || !confirmed {
 		return err
 	}
 	stage, err := a.updater.PrepareInstall(a.updateContext, filepath.Dir(target))
 	if err != nil {
 		return err
 	}
-	gate, err := integration.StartUpdateWorker(stage)
+	var gate *os.File
+	err = a.updater.Restart(func() error {
+		var startErr error
+		gate, startErr = integration.StartUpdateWorker(stage)
+		return startErr
+	})
 	if err != nil {
 		_ = os.RemoveAll(stage)
 		return err
@@ -114,4 +126,15 @@ func (a *App) InstallUpdate() error {
 	a.desktopMu.Unlock()
 	a.Quit()
 	return nil
+}
+
+func updateInstallationConfirmed(answer string) (bool, error) {
+	switch answer {
+	case "Yes", "Установить и перезапустить":
+		return true, nil
+	case "No", "Cancel", "Отмена", "":
+		return false, nil
+	default:
+		return false, fmt.Errorf("неизвестный ответ диалога подтверждения обновления: %q", answer)
+	}
 }

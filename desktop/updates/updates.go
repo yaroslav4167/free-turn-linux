@@ -1,5 +1,6 @@
 // Package updates checks public GitHub releases and downloads verified archives.
-// It never extracts archives, runs downloaded code or replaces installed files.
+// Downloads never replace installed files; confirmed installations are staged
+// separately and handed to a user-level worker after the GUI exits.
 package updates
 
 import (
@@ -33,6 +34,9 @@ type State struct {
 	ReleaseURL          string `json:"releaseUrl"`
 	CheckedAt           string `json:"checkedAt"`
 	Busy                string `json:"busy"`
+	Phase               string `json:"phase"`
+	BytesPerSecond      int64  `json:"bytesPerSecond"`
+	RemainingSeconds    int64  `json:"remainingSeconds"`
 	Error               string `json:"error"`
 	DownloadedPath      string `json:"downloadedPath"`
 	Received            int64  `json:"received"`
@@ -54,14 +58,15 @@ type release struct {
 }
 
 type Manager struct {
-	mu         sync.Mutex
-	state      State
-	arch       string
-	client     *http.Client
-	apiURL     string
-	archive    asset
-	checksum   asset
-	repository string
+	mu              sync.Mutex
+	state           State
+	arch            string
+	client          *http.Client
+	apiURL          string
+	archive         asset
+	checksum        asset
+	repository      string
+	downloadStarted time.Time
 }
 
 func New(version, arch, repository string) *Manager {
@@ -84,7 +89,34 @@ func New(version, arch, repository string) *Manager {
 	}
 }
 
-func (m *Manager) State() State { m.mu.Lock(); defer m.mu.Unlock(); return m.state }
+func (m *Manager) State() State {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	state := m.state
+	state.BytesPerSecond, state.RemainingSeconds = 0, -1
+	if state.Phase == "downloading" && !m.downloadStarted.IsZero() {
+		state.BytesPerSecond, state.RemainingSeconds = transferEstimate(state.Received, state.Total, time.Since(m.downloadStarted))
+	}
+	return state
+}
+
+func transferEstimate(received, total int64, elapsed time.Duration) (int64, int64) {
+	if received <= 0 || elapsed < 200*time.Millisecond {
+		return 0, -1
+	}
+	rate := int64(float64(received) / elapsed.Seconds())
+	if rate <= 0 || total <= 0 {
+		return rate, -1
+	}
+	remaining := max(int64(0), total-received)
+	return rate, (remaining + rate - 1) / rate
+}
+
+func (m *Manager) setPhase(phase string) {
+	m.mu.Lock()
+	m.state.Phase = phase
+	m.mu.Unlock()
+}
 
 func (m *Manager) begin(operation string) error {
 	m.mu.Lock()
@@ -93,14 +125,28 @@ func (m *Manager) begin(operation string) error {
 		return errors.New("проверка или скачивание уже выполняется")
 	}
 	m.state.Busy, m.state.Error = operation, ""
+	m.state.Phase = operation
+	m.state.Received, m.state.Total = 0, 0
+	m.downloadStarted = time.Time{}
 	return nil
 }
 func (m *Manager) finish(err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	operation := m.state.Busy
 	m.state.Busy = ""
 	if err != nil {
 		m.state.Error = err.Error()
+		m.state.Phase = "error"
+	} else {
+		switch operation {
+		case "downloading":
+			m.state.Phase = "downloaded"
+		case "preparing":
+			m.state.Phase = "ready"
+		default:
+			m.state.Phase = ""
+		}
 	}
 }
 
@@ -165,6 +211,16 @@ func (m *Manager) Download(ctx context.Context, destination, tag string) (err er
 	return m.download(ctx, destination, tag)
 }
 
+// Restart reports the handoff while the separate installer worker starts up.
+// Actual file replacement happens after the old GUI has exited.
+func (m *Manager) Restart(start func() error) (err error) {
+	if err = m.begin("restarting"); err != nil {
+		return err
+	}
+	defer func() { m.finish(err) }()
+	return start()
+}
+
 func (m *Manager) download(ctx context.Context, destination, tag string) (err error) {
 	m.mu.Lock()
 	archive, checksum := m.archive, m.checksum
@@ -180,11 +236,13 @@ func (m *Manager) download(ctx context.Context, destination, tag string) (err er
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
 	defer cancel()
 	checkCtx, checkCancel := context.WithTimeout(ctx, 30*time.Second)
+	m.setPhase("checksum")
 	expected, err := m.expectedChecksum(checkCtx, checksum.URL, archive.Name)
 	checkCancel()
 	if err != nil {
 		return err
 	}
+	m.setPhase("connecting")
 	body, err := m.get(ctx, archive.URL)
 	if err != nil {
 		return err
@@ -196,6 +254,10 @@ func (m *Manager) download(ctx context.Context, destination, tag string) (err er
 	}
 	defer func() { _ = tmp.Close(); _ = os.Remove(tmp.Name()) }()
 	hash := sha256.New()
+	m.mu.Lock()
+	m.downloadStarted = time.Now()
+	m.state.Phase = "downloading"
+	m.mu.Unlock()
 	n, err := io.Copy(io.MultiWriter(tmp, hash, progress{m}), io.LimitReader(body, archive.Size+1))
 	if err != nil {
 		return err
@@ -203,6 +265,7 @@ func (m *Manager) download(ctx context.Context, destination, tag string) (err er
 	if n != archive.Size {
 		return errors.New("размер скачанного архива не совпадает с релизом")
 	}
+	m.setPhase("verifying")
 	if hex.EncodeToString(hash.Sum(nil)) != expected {
 		return errors.New("SHA-256 не совпадает: файл не сохранён")
 	}

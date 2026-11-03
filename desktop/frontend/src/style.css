@@ -704,6 +704,34 @@ button:disabled {
   max-width: 400px;
   margin-top: 8px;
 }
+.update-task {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.update-task-heading,
+.update-task-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.update-task-heading {
+  justify-content: space-between;
+}
+.update-task-stats {
+  flex-wrap: wrap;
+  margin-top: 10px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.update-task .update-progress {
+  width: 100%;
+  max-width: none;
+  height: 8px;
+  accent-color: var(--accent);
+}
 
 .settings-card .notice {
   margin-top: 14px;
