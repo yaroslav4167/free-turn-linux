@@ -711,6 +711,9 @@ button:disabled {
 .update-actions {
   flex-wrap: wrap;
 }
+.update-notice-actions {
+  flex-shrink: 0;
+}
 .autoconnect-profile {
   display: flex;
   flex-direction: column;

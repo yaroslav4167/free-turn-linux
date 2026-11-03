@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react'
 import {desktop, UpdateState} from '../desktop'
 import Icon from './Icon'
+import {readDismissedUpdate, saveDismissedUpdate, updateNoticeId} from '../updateNotice'
 
 function useUpdateState(interval: number) {
   const [state, setState] = useState<UpdateState | null>(null)
@@ -21,13 +22,25 @@ function useUpdateState(interval: number) {
 
 export function UpdateNotice({onOpen}: {onOpen: () => void}) {
   const state = useUpdateState(10000)
-  if (!state?.available) return null
+  const [dismissed, setDismissed] = useState(() => readDismissedUpdate())
+  if (!state?.available || dismissed === updateNoticeId(state)) return null
+  const dismiss = () => {
+    const id = updateNoticeId(state)
+    setDismissed(id)
+    saveDismissedUpdate(id)
+  }
   return (
     <div className="notice info app-error" role="status">
       <span>{state.currentKnown ? 'Доступно обновление' : 'Доступен стабильный релиз'} FreeTurn {state.latestVersion}.</span>
-      <button className="btn small" onClick={onOpen}>
-        Открыть настройки
-      </button>
+      <div className="inline-actions update-notice-actions">
+        <button className="btn small" onClick={onOpen}>
+          Открыть настройки
+        </button>
+        <button className="btn small ghost" onClick={dismiss}
+          aria-label="Скрыть уведомление об обновлении" title="Скрыть уведомление об этой версии">
+          ×
+        </button>
+      </div>
     </div>
   )
 }
