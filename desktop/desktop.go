@@ -13,17 +13,20 @@ import (
 )
 
 type DesktopSettings struct {
-	CloseToTray         bool   `json:"closeToTray"`
-	Autostart           bool   `json:"autostart"`
-	AutoConnect         bool   `json:"autoConnect"`
-	AutoConnectServerID string `json:"autoConnectServerId"`
-	AutoConnectError    string `json:"autoConnectError"`
-	AutoCheckUpdates    bool   `json:"autoCheckUpdates"`
-	Supported           bool   `json:"supported"`
-	TrayAvailable       bool   `json:"trayAvailable"`
-	TrayError           string `json:"trayError"`
-	InstalledPath       string `json:"installedPath"`
-	VPNHelperAvailable  bool   `json:"vpnHelperAvailable"`
+	CloseToTray              bool   `json:"closeToTray"`
+	Autostart                bool   `json:"autostart"`
+	AutoConnect              bool   `json:"autoConnect"`
+	AutoConnectServerID      string `json:"autoConnectServerId"`
+	AutoConnectError         string `json:"autoConnectError"`
+	AutoCheckUpdates         bool   `json:"autoCheckUpdates"`
+	RenderingMode            string `json:"renderingMode"`
+	ActiveRenderingMode      string `json:"activeRenderingMode"`
+	RenderingRestartRequired bool   `json:"renderingRestartRequired"`
+	Supported                bool   `json:"supported"`
+	TrayAvailable            bool   `json:"trayAvailable"`
+	TrayError                string `json:"trayError"`
+	InstalledPath            string `json:"installedPath"`
+	VPNHelperAvailable       bool   `json:"vpnHelperAvailable"`
 }
 
 func (a *App) startTray() {
@@ -87,9 +90,12 @@ func (a *App) DesktopSettings() (DesktopSettings, error) {
 	return DesktopSettings{
 		CloseToTray: a.preferences.CloseToTray, Autostart: autostart,
 		AutoConnect: a.preferences.AutoConnect, AutoConnectServerID: a.preferences.AutoConnectServerID,
-		AutoConnectError: a.autoConnectError,
-		AutoCheckUpdates: a.preferences.AutoCheckUpdates,
-		Supported:        integration.Supported, TrayAvailable: a.tray != nil && a.tray.Available(),
+		AutoConnectError:         a.autoConnectError,
+		AutoCheckUpdates:         a.preferences.AutoCheckUpdates,
+		RenderingMode:            integration.NormalizeRenderingMode(a.preferences.RenderingMode),
+		ActiveRenderingMode:      integration.NormalizeRenderingMode(a.activeRenderingMode),
+		RenderingRestartRequired: integration.NormalizeRenderingMode(a.preferences.RenderingMode) != integration.NormalizeRenderingMode(a.activeRenderingMode),
+		Supported:                integration.Supported, TrayAvailable: a.tray != nil && a.tray.Available(),
 		TrayError: a.trayError, InstalledPath: path,
 		VPNHelperAvailable: integration.VPNHelperAvailable(),
 	}, nil

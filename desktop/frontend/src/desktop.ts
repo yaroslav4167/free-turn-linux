@@ -6,6 +6,9 @@ export interface DesktopSettings {
   autoConnectServerId: string
   autoConnectError: string
   autoCheckUpdates: boolean
+  renderingMode: 'auto' | 'hardware' | 'software'
+  activeRenderingMode: 'auto' | 'hardware' | 'software'
+  renderingRestartRequired: boolean
   supported: boolean
   trayAvailable: boolean
   trayError: string
@@ -19,6 +22,7 @@ interface DesktopAPI {
   DownloadUpdate(): Promise<void>
   InstallUpdate(): Promise<void>
   SetAutoCheckUpdates(enabled: boolean): Promise<void>
+  SetRenderingMode(mode: string): Promise<void>
   DesktopSettings(): Promise<DesktopSettings>
   SetCloseToTray(enabled: boolean): Promise<void>
   SetAutostart(enabled: boolean): Promise<void>

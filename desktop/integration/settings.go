@@ -11,6 +11,26 @@ type Preferences struct {
 	AutoConnect         bool   `json:"autoConnect"`
 	AutoConnectServerID string `json:"autoConnectServerId"`
 	AutoCheckUpdates    bool   `json:"autoCheckUpdates"`
+	RenderingMode       string `json:"renderingMode"`
+}
+
+const (
+	RenderingAuto     = "auto"
+	RenderingHardware = "hardware"
+	RenderingSoftware = "software"
+)
+
+func ValidRenderingMode(mode string) bool {
+	return mode == RenderingAuto || mode == RenderingHardware || mode == RenderingSoftware
+}
+
+// Legacy files have no rendering preference. Unknown hand-edited values also
+// fall back to WebKit's automatic policy rather than disabling GPU acceleration.
+func NormalizeRenderingMode(mode string) string {
+	if ValidRenderingMode(mode) {
+		return mode
+	}
+	return RenderingAuto
 }
 
 func preferencesPath() (string, error) {
@@ -19,7 +39,7 @@ func preferencesPath() (string, error) {
 }
 
 func LoadPreferences() (Preferences, error) {
-	prefs := Preferences{CloseToTray: true, AutoCheckUpdates: true}
+	prefs := Preferences{CloseToTray: true, AutoCheckUpdates: true, RenderingMode: RenderingAuto}
 	path, err := preferencesPath()
 	if err != nil {
 		return prefs, err
@@ -32,10 +52,12 @@ func LoadPreferences() (Preferences, error) {
 		return prefs, err
 	}
 	err = json.Unmarshal(data, &prefs)
+	prefs.RenderingMode = NormalizeRenderingMode(prefs.RenderingMode)
 	return prefs, err
 }
 
 func SavePreferences(prefs Preferences) error {
+	prefs.RenderingMode = NormalizeRenderingMode(prefs.RenderingMode)
 	path, err := preferencesPath()
 	if err != nil {
 		return err

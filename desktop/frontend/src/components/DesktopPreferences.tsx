@@ -57,6 +57,38 @@ export default function DesktopPreferences({version}: {version: string}) {
           <UpdatePreferences autoCheck={settings.autoCheckUpdates} disabled={busy} canInstall={settings.supported}
             onAutoCheck={(enabled) => run(() => desktop().SetAutoCheckUpdates(enabled))} />
           <div className="settings-card">
+            <h2><Icon name="settings" /> Отрисовка интерфейса</h2>
+            <label className="field rendering-mode-field">
+              <span>Режим рендеринга</span>
+              <select
+                value={settings.renderingMode}
+                disabled={busy || !settings.supported}
+                onChange={(e) => run(() => desktop().SetRenderingMode(e.target.value), 'Режим отрисовки сохранён.')}
+              >
+                <option value="auto">Автоматически — GPU при доступности (по умолчанию)</option>
+                <option value="hardware">Предпочитать аппаратное ускорение (GPU)</option>
+                <option value="software">Программная отрисовка (CPU)</option>
+              </select>
+            </label>
+            <p className="settings-note">
+              В автоматическом режиме WebKit может использовать аппаратное ускорение, если оно доступно для
+              содержимого и драйвера. Программный режим отключает его; используйте при артефактах или сбоях GPU.
+              Выбранная политика не является проверкой того, какой GPU фактически используется.
+            </p>
+            <p>
+              Режим текущего запуска: <strong>{settings.activeRenderingMode === 'software' ? 'Программный (CPU)'
+                : settings.activeRenderingMode === 'hardware' ? 'Предпочитать GPU' : 'Автоматический'}</strong>.
+            </p>
+            {settings.renderingRestartRequired && (
+              <div className="notice info" role="status">
+                Для применения сохранённого режима полностью завершите FreeTurn через «Выход» и откройте снова.
+                Закрытие окна в трей не считается перезапуском. Если использовался флаг --software-rendering,
+                запустите приложение без него, чтобы вернуть выбранный режим.
+              </div>
+            )}
+            <p className="settings-note">Изменение настройки не отключает VPN и не перезапускает приложение автоматически.</p>
+          </div>
+          <div className="settings-card">
             <h2>
               <Icon name="shield" /> Подключение VPN без пароля
             </h2>

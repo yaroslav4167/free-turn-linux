@@ -18,6 +18,10 @@ export function SetAutoCheckUpdates(arg1) {
   return window['go']['main']['App']['SetAutoCheckUpdates'](arg1);
 }
 
+export function SetRenderingMode(arg1) {
+  return window['go']['main']['App']['SetRenderingMode'](arg1);
+}
+
 export function UpdateState() {
   return window['go']['main']['App']['UpdateState']();
 }

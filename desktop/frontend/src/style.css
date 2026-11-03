@@ -742,7 +742,8 @@ button:disabled {
 .update-notice-actions {
   flex-shrink: 0;
 }
-.autoconnect-profile {
+.autoconnect-profile,
+.rendering-mode-field {
   display: flex;
   flex-direction: column;
   gap: 8px;

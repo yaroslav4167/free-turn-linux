@@ -13,6 +13,8 @@ export function InstallUpdate():Promise<void>;
 
 export function SetAutoCheckUpdates(arg1:boolean):Promise<void>;
 
+export function SetRenderingMode(arg1:string):Promise<void>;
+
 export function UpdateState():Promise<updates.State>;
 
 export function BuildLink(arg1:backend.Server):Promise<string>;

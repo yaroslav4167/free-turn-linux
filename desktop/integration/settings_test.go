@@ -9,7 +9,7 @@ import (
 func TestAutoConnectDefaultsAndMigration(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	prefs, err := LoadPreferences()
-	if err != nil || prefs.AutoConnect || !prefs.AutoCheckUpdates {
+	if err != nil || prefs.AutoConnect || !prefs.AutoCheckUpdates || prefs.RenderingMode != RenderingAuto {
 		t.Fatalf("autoconnect must default off: %+v, %v", prefs, err)
 	}
 	path, _ := preferencesPath()
@@ -20,7 +20,31 @@ func TestAutoConnectDefaultsAndMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	prefs, err = LoadPreferences()
-	if err != nil || prefs.AutoConnect || prefs.CloseToTray || !prefs.AutoCheckUpdates {
+	if err != nil || prefs.AutoConnect || prefs.CloseToTray || !prefs.AutoCheckUpdates || prefs.RenderingMode != RenderingAuto {
 		t.Fatalf("bad migration: %+v, %v", prefs, err)
+	}
+}
+
+func TestRenderingModeMigration(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	path, _ := preferencesPath()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct{ json, want string }{
+		{`{}`, RenderingAuto},
+		{`{"renderingMode":""}`, RenderingAuto},
+		{`{"renderingMode":"bad value"}`, RenderingAuto},
+		{`{"renderingMode":"auto"}`, RenderingAuto},
+		{`{"renderingMode":"hardware"}`, RenderingHardware},
+		{`{"renderingMode":"software"}`, RenderingSoftware},
+	} {
+		if err := os.WriteFile(path, []byte(test.json), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		prefs, err := LoadPreferences()
+		if err != nil || prefs.RenderingMode != test.want {
+			t.Fatalf("migration of %s: %+v, %v", test.json, prefs, err)
+		}
 	}
 }

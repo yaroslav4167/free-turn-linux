@@ -90,7 +90,7 @@ func main() {
 		Linux: &linux.Options{
 			Icon:             appassets.IconPNG,
 			ProgramName:      "freeturn",
-			WebviewGpuPolicy: linux.WebviewGpuPolicyNever,
+			WebviewGpuPolicy: webviewGPUPolicy(app.activeRenderingMode),
 		},
 		OnStartup:     app.startup,
 		OnShutdown:    app.shutdown,

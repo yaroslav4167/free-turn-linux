@@ -311,6 +311,9 @@ export namespace main {
 	    autoConnectServerId: string;
 	    autoConnectError: string;
 	    autoCheckUpdates: boolean;
+	    renderingMode: string;
+	    activeRenderingMode: string;
+	    renderingRestartRequired: boolean;
 	    supported: boolean;
 	    trayAvailable: boolean;
 	    trayError: string;
@@ -329,6 +332,9 @@ export namespace main {
 	        this.autoConnectServerId = source["autoConnectServerId"];
 	        this.autoConnectError = source["autoConnectError"];
 	        this.autoCheckUpdates = source["autoCheckUpdates"];
+	        this.renderingMode = source["renderingMode"];
+	        this.activeRenderingMode = source["activeRenderingMode"];
+	        this.renderingRestartRequired = source["renderingRestartRequired"];
 	        this.supported = source["supported"];
 	        this.trayAvailable = source["trayAvailable"];
 	        this.trayError = source["trayError"];
