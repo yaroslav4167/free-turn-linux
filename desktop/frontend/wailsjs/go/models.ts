@@ -257,6 +257,9 @@ export namespace main {
 	export class DesktopSettings {
 	    closeToTray: boolean;
 	    autostart: boolean;
+	    autoConnect: boolean;
+	    autoConnectServerId: string;
+	    autoConnectError: string;
 	    supported: boolean;
 	    trayAvailable: boolean;
 	    trayError: string;
@@ -271,6 +274,9 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.closeToTray = source["closeToTray"];
 	        this.autostart = source["autostart"];
+	        this.autoConnect = source["autoConnect"];
+	        this.autoConnectServerId = source["autoConnectServerId"];
+	        this.autoConnectError = source["autoConnectError"];
 	        this.supported = source["supported"];
 	        this.trayAvailable = source["trayAvailable"];
 	        this.trayError = source["trayError"];
@@ -503,4 +509,3 @@ export namespace serversetup {
 	}
 
 }
-

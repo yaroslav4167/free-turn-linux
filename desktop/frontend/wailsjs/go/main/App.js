@@ -126,6 +126,10 @@ export function SetAutostart(arg1) {
   return window['go']['main']['App']['SetAutostart'](arg1);
 }
 
+export function SetAutoConnect(arg1, arg2) {
+  return window['go']['main']['App']['SetAutoConnect'](arg1, arg2);
+}
+
 export function SetCloseToTray(arg1) {
   return window['go']['main']['App']['SetCloseToTray'](arg1);
 }

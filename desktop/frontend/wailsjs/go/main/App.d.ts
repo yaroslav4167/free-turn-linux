@@ -66,6 +66,8 @@ export function ServerUninstall(arg1:string,arg2:boolean):Promise<serversetup.Un
 
 export function SetAutostart(arg1:boolean):Promise<void>;
 
+export function SetAutoConnect(arg1:boolean,arg2:string):Promise<void>;
+
 export function SetCloseToTray(arg1:boolean):Promise<void>;
 
 export function SetupCreateServer(arg1:serversetup.SSHConfig,arg2:backend.ServerSetupDraft,arg3:serversetup.WgSetupResult):Promise<backend.Server>;

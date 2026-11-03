@@ -26,14 +26,16 @@ var errNoSSHConfig = errors.New("для этого сервера нет сох�
 // App is the Wails-bound facade the frontend calls into. It stays thin - all
 // real logic lives in backend, so it can be unit-tested without a Wails runtime.
 type App struct {
-	ctx         context.Context
-	store       *backend.Store
-	engine      *backend.Engine
-	desktopMu   sync.Mutex
-	preferences integration.Preferences
-	tray        *tray.Tray
-	trayError   string
-	quitting    bool
+	ctx              context.Context
+	store            *backend.Store
+	engine           *backend.Engine
+	desktopMu        sync.Mutex
+	preferences      integration.Preferences
+	tray             *tray.Tray
+	trayError        string
+	quitting         bool
+	autoConnectOnce  sync.Once
+	autoConnectError string
 }
 
 func NewApp() *App {

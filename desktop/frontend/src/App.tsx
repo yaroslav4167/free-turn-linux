@@ -18,6 +18,7 @@ import LogConsole, {LogEntry} from './components/LogConsole'
 import Navigation, {View} from './components/Navigation'
 import Connection from './components/Connection'
 import DesktopPreferences from './components/DesktopPreferences'
+import {desktop} from './desktop'
 import {watchStatus} from './status'
 import {EMPTY_TRAFFIC_HISTORY, recordTraffic} from './trafficHistory'
 
@@ -60,11 +61,12 @@ export default function App() {
   }, [status])
 
   useEffect(() => {
-    ListServers()
-      .then((list) => {
+    Promise.all([ListServers(), desktop().DesktopSettings().catch(() => null)])
+      .then(([list, settings]) => {
         setServers(list)
-        const last = localStorage.getItem('freeturn:selected-server')
+        const last = settings?.autoConnect ? settings.autoConnectServerId : localStorage.getItem('freeturn:selected-server')
         if (list.length > 0) setSelectedId(list.find((s) => s.id === last)?.id ?? list[0].id)
+        if (settings?.autoConnectError) setConnectError(settings.autoConnectError)
       })
       .catch((e) => setConnectError(String(e)))
     CoreVersion().then(setVersion)

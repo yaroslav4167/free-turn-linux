@@ -2,6 +2,9 @@
 export interface DesktopSettings {
   closeToTray: boolean
   autostart: boolean
+  autoConnect: boolean
+  autoConnectServerId: string
+  autoConnectError: string
   supported: boolean
   trayAvailable: boolean
   trayError: string
@@ -13,6 +16,7 @@ interface DesktopAPI {
   DesktopSettings(): Promise<DesktopSettings>
   SetCloseToTray(enabled: boolean): Promise<void>
   SetAutostart(enabled: boolean): Promise<void>
+  SetAutoConnect(enabled: boolean, serverId: string): Promise<void>
   InstallDesktop(): Promise<string>
   CreateDesktopShortcut(): Promise<string>
   InstallVPNHelper(): Promise<void>

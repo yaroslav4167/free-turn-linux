@@ -7,7 +7,9 @@ import (
 )
 
 type Preferences struct {
-	CloseToTray bool `json:"closeToTray"`
+	CloseToTray         bool   `json:"closeToTray"`
+	AutoConnect         bool   `json:"autoConnect"`
+	AutoConnectServerID string `json:"autoConnectServerId"`
 }
 
 func preferencesPath() (string, error) {

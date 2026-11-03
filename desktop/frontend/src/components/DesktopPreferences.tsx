@@ -1,16 +1,20 @@
 import {useEffect, useState} from 'react'
 import {desktop, DesktopSettings} from '../desktop'
 import Icon from './Icon'
+import {ListServers} from '../../wailsjs/go/main/App'
+import {backend} from '../../wailsjs/go/models'
 
 export default function DesktopPreferences({version}: {version: string}) {
   const [settings, setSettings] = useState<DesktopSettings | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [servers, setServers] = useState<backend.Server[]>([])
 
   const refresh = () => desktop().DesktopSettings().then(setSettings)
   useEffect(() => {
     refresh().catch((e) => setError(String(e)))
+    ListServers().then(setServers).catch((e) => setError(String(e)))
   }, [])
 
   const run = async (action: () => Promise<unknown>, success = '') => {
@@ -106,7 +110,7 @@ export default function DesktopPreferences({version}: {version: string}) {
             <label className="preference-row">
               <div>
                 <strong>Запускать вместе с системой</strong>
-                <p>При входе в сеанс Linux. Подключение VPN запускается вручную.</p>
+                <p>При входе в сеанс Linux. Автоподключение настраивается отдельно ниже.</p>
               </div>
               <input
                 type="checkbox"
@@ -116,6 +120,42 @@ export default function DesktopPreferences({version}: {version: string}) {
                 onChange={(e) => run(() => desktop().SetAutostart(e.target.checked))}
               />
             </label>
+            <label className="preference-row">
+              <div>
+                <strong>Подключаться при запуске</strong>
+                <p>Одна попытка при каждом запуске приложения, в том числе вместе с системой.</p>
+              </div>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={settings.autoConnect}
+                disabled={busy || (!servers.length && !settings.autoConnect)}
+                onChange={(e) => run(() => desktop().SetAutoConnect(
+                  e.target.checked, settings.autoConnectServerId || servers[0]?.id || '',
+                ))}
+              />
+            </label>
+            <label className="field">
+              <span>Профиль автоподключения</span>
+              <select
+                value={settings.autoConnectServerId}
+                disabled={busy || !servers.length}
+                onChange={(e) => run(() => desktop().SetAutoConnect(settings.autoConnect, e.target.value))}
+              >
+                <option value="" disabled>Выберите профиль</option>
+                {settings.autoConnectServerId && !servers.some((s) => s.id === settings.autoConnectServerId) && (
+                  <option value={settings.autoConnectServerId} disabled>Профиль удалён — выберите другой</option>
+                )}
+                {servers.map((s) => <option key={s.id} value={s.id}>{s.name || s.id}</option>)}
+              </select>
+            </label>
+            <p className="settings-note">
+              Для VPN без запроса пароля установите системный VPN-helper. Капча может потребовать ручного ввода.
+              При ошибке повторите подключение вручную.
+            </p>
+            {settings.autoConnectError && (
+              <div className="notice error" role="alert">{settings.autoConnectError}</div>
+            )}
             <label className="preference-row">
               <div>
                 <strong>Сворачивать в трей при закрытии</strong>
