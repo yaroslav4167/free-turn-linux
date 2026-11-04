@@ -16,3 +16,12 @@ test('renderer selection and compatibility notices are absent from settings', ()
   assert.doesNotMatch(component, /SetRenderingMode|rendering-mode-field|settings\.renderingMode/)
   assert.doesNotMatch(component, /settings\.renderingNote/)
 })
+
+test('window opens at its minimum supported dimensions', () => {
+  const main = read('desktop/main.go')
+  const value = (name) => Number(main.match(new RegExp('\\b' + name + ':\\s*(\\d+)'))?.[1])
+  assert.equal(value('Width'), 900)
+  assert.equal(value('Height'), 600)
+  assert.equal(value('Width'), value('MinWidth'))
+  assert.equal(value('Height'), value('MinHeight'))
+})

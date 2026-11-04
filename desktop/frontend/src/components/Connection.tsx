@@ -3,6 +3,9 @@ import Icon from './Icon'
 import TrafficSparkline from './TrafficSparkline'
 import type {TrafficHistory} from '../trafficHistory'
 import {connectionState} from '../connectionState'
+import {powerShapeAt} from '../powerShape'
+import {usePowerMotion} from '../usePowerMotion'
+import ConnectionLoader from './ConnectionLoader'
 
 function rate(value: number): string {
   if (value >= 1024 * 1024) return (value / (1024 * 1024)).toFixed(1) + ' МБ/с'
@@ -49,6 +52,9 @@ export default function Connection({
   const vpn = (active ? activeServer : selected)?.connMode === 'vpn'
   const presentation = connectionState(status.state, pending, vpn)
   const connected = presentation.connected
+  const motion = usePowerMotion(connected, presentation.busy)
+  const powerShape = useMemo(() => powerShapeAt(motion.morph), [motion.morph])
+  const contourStyle = {transform: `rotate(${motion.angle}deg) scale(${1 + Math.max(0, motion.morph - 1) * 0.4})`}
   return (
     <section className="connection-page">
       <header className="page-heading">
@@ -73,14 +79,13 @@ export default function Connection({
           aria-busy={presentation.busy}
           aria-pressed={connected}
         >
-          <svg className="power-progress" viewBox="0 0 150 150" aria-hidden="true" focusable="false">
-            <rect
+          <svg className="power-outline" style={contourStyle} viewBox="0 0 150 150" aria-hidden="true" focusable="false">
+            <path d={powerShape} />
+          </svg>
+          <svg className="power-progress" style={contourStyle} viewBox="0 0 150 150" aria-hidden="true" focusable="false">
+            <path
               className="power-progress-path"
-              x="1"
-              y="1"
-              width="148"
-              height="148"
-              rx="43"
+              d={powerShape}
               pathLength={1}
               fill="none"
               stroke="currentColor"
@@ -88,7 +93,10 @@ export default function Connection({
               vectorEffect="non-scaling-stroke"
             />
           </svg>
-          <Icon name={connected ? 'stop' : 'power'} size={connected ? 40 : 48} />
+          <span className="power-symbol" aria-hidden="true">
+            <span className="power-idle-icon"><Icon name="power" size={48} /></span>
+            <ConnectionLoader active={presentation.busy} />
+          </span>
           <span className="power-action">{presentation.action}</span>
         </button>
         <h2 aria-live="polite">{presentation.heading}</h2>
@@ -99,11 +107,6 @@ export default function Connection({
               ? 'Нажмите, чтобы подключиться к выбранному серверу'
               : 'Добавьте первый сервер, чтобы начать'}
         </p>
-        {active && !connected && (
-          <button className="btn ghost small" onClick={onDisconnect}>
-            Отменить подключение
-          </button>
-        )}
         {status.state === 'captcha' && captchaUrl && (
           <button className="btn primary" onClick={() => BrowserOpenURL(captchaUrl)}>
             Открыть проверку в браузере
@@ -177,3 +180,4 @@ export default function Connection({
     </section>
   )
 }
+import {useMemo} from 'react'

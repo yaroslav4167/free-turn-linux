@@ -1,5 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
 import {connectionState} from '../src/connectionState.ts'
 
 test('connected VPN has an explicit on state and disconnect action', () => {
@@ -29,4 +30,16 @@ test('idle, captcha and errors do not show an enabled state', () => {
   assert.equal(connectionState('captcha', true, true).heading, 'Требуется проверка')
   assert.equal(connectionState('captcha', true, true).busy, false)
   assert.equal(connectionState('error', true, true).busy, false)
+})
+
+test('connecting and captcha use the main button to cancel without an extra button', () => {
+  for (const phase of ['connecting', 'captcha']) {
+    const state = connectionState(phase, false, true)
+    assert.equal(state.active, true)
+    assert.equal(state.action, 'Отменить')
+    assert.equal(state.ariaLabel, 'Отменить подключение')
+  }
+  const component = readFileSync(new URL('../src/components/Connection.tsx', import.meta.url), 'utf8')
+  assert.match(component, /onClick=\{active \? onDisconnect : onConnect\}/)
+  assert.doesNotMatch(component, /Отменить подключение/)
 })
