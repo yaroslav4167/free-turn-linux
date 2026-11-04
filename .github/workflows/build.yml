@@ -23,7 +23,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -46,7 +46,7 @@ jobs:
           go test ./desktop/...
           go vet ./desktop/...
       - name: Upload Linux download
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: FreeTurn-Linux-amd64
           path: |

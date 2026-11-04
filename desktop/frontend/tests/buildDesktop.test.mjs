@@ -10,6 +10,17 @@ import {createHash} from 'node:crypto'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 
+test('workflows use Node 24-compatible actions without changing the frontend Node version', () => {
+  for (const name of ['build.yml', 'release.yml', 'ci.yml']) {
+    const workflow = readFileSync(join(root, '.github/workflows', name), 'utf8')
+    assert.match(workflow, /actions\/setup-node@v7\.1\.0/)
+    assert.match(workflow, /node-version: 22/)
+    assert.doesNotMatch(workflow, /actions\/(?:setup-node|upload-artifact)@v4\b/)
+  }
+  assert.match(readFileSync(join(root, '.github/workflows/build.yml'), 'utf8'), /actions\/upload-artifact@v7\.0\.2/)
+  assert.match(readFileSync(join(root, '.github/workflows/release.yml'), 'utf8'), /softprops\/action-gh-release@v3\.0\.3/)
+})
+
 test('GitHub workflows inject their own repository into update builds', () => {
   for (const name of ['build.yml', 'release.yml']) {
     const workflow = readFileSync(join(root, '.github/workflows', name), 'utf8')
