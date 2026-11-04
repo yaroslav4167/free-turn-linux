@@ -78,6 +78,10 @@ export function MinimiseToTray() {
   return window['go']['main']['App']['MinimiseToTray']();
 }
 
+export function MeasurePing(arg1) {
+  return window['go']['main']['App']['MeasurePing'](arg1);
+}
+
 export function NewServer() {
   return window['go']['main']['App']['NewServer']();
 }

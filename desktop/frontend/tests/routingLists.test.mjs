@@ -14,6 +14,15 @@ test('VPN lists expose individual modes, enable switches and newline-preserving 
   assert.match(ui, /не защита от утечек/)
 })
 
+test('routing explanations are shown only in hover popups', () => {
+  const ui = read('desktop/frontend/src/components/VPNRoutingLists.tsx')
+  const tips = [...ui.matchAll(/<InfoTip\b[\s\S]*?<\/InfoTip>/g)].map(match => match[0])
+  assert.equal(tips.length, 2)
+  assert.match(tips[0], /Белый список:/)
+  assert.match(tips[1], /Домены разрешаются через системный DNS/)
+  assert.doesNotMatch(ui, /className="notice info"/)
+})
+
 test('invalid DNS or routing lists are rejected before disconnecting the old VPN', () => {
   const engine = read('desktop/backend/engine.go')
   assert.ok(engine.indexOf('routing.Build(') < engine.indexOf('e.forceStop()'))

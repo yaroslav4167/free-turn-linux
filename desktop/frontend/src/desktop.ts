@@ -17,6 +17,7 @@ export interface DesktopSettings {
 }
 
 interface DesktopAPI {
+  MeasurePing(serverId: string): Promise<{serverId: string, host: string, milliseconds: number}>
   SetLanguage(language: string): Promise<void>
   UpdateState(): Promise<UpdateState>
   CheckForUpdates(): Promise<void>

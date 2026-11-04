@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -152,9 +153,13 @@ func normalizeServer(s *Server) {
 	if s.RoutingLists == nil {
 		s.RoutingLists = []routing.List{}
 	}
-	if s.VKLinks == nil {
-		s.VKLinks = []string{}
+	links := make([]string, 0, len(s.VKLinks))
+	for _, link := range s.VKLinks {
+		if link = strings.TrimSpace(link); link != "" {
+			links = append(links, link)
+		}
 	}
+	s.VKLinks = links
 	if s.DNSServers == nil {
 		s.DNSServers = []string{}
 	}

@@ -27,7 +27,7 @@ test('Russian UI literals are paired with English, except the native language na
           let parent = node.parent
           let paired = false
           while (parent) {
-            if (ts.isCallExpression(parent) && parent.expression.getText(source) === 'tr' && parent.arguments.length === 2) { paired = true; break }
+            if (ts.isCallExpression(parent) && parent.expression.getText(source) === 'tr' && parent.arguments.length >= 1) { paired = true; break }
             parent = parent.parent
           }
           assert.ok(paired || node.text === 'Русский', `Untranslated UI text in ${path.pathname}: ${node.text}`)

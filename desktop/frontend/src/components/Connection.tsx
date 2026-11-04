@@ -7,6 +7,8 @@ import {powerShapeAt} from '../powerShape'
 import {usePowerMotion} from '../usePowerMotion'
 import ConnectionLoader from './ConnectionLoader'
 import {tr} from '../language'
+import {useServerPing} from '../useServerPing'
+import InfoTip from './InfoTip'
 
 function rate(value: number): string {
   if (value >= 1024 * 1024) return (value / (1024 * 1024)).toFixed(1) + tr(' МБ/с', ' MB/s')
@@ -53,6 +55,7 @@ export default function Connection({
   const vpn = (active ? activeServer : selected)?.connMode === 'vpn'
   const presentation = connectionState(status.state, pending, vpn)
   const connected = presentation.connected
+  const ping = useServerPing(status.serverId, connected)
   const motion = usePowerMotion(connected, presentation.busy)
   const powerShape = useMemo(() => powerShapeAt(motion.morph), [motion.morph])
   const contourStyle = {transform: `rotate(${motion.angle}deg) scale(${1 + Math.max(0, motion.morph - 1) * 0.4})`}
@@ -145,6 +148,13 @@ export default function Connection({
               <Icon name="servers" size={17} /> {tr('Потоки', 'Streams')}
             </span>
             <strong>{active ? `${status.streams} / ${status.total}` : '—'}</strong>
+            <small className="muted connection-ping">
+              {tr('Пинг')}: {ping.measuring ? '…' : ping.milliseconds === null ? '—' : `${ping.milliseconds < 1 ? '<1' : Math.round(ping.milliseconds)} ${tr('мс')}`}
+              <InfoTip label={tr('О пинге сервера')}>
+                {tr('ICMP до адреса сервера, примерно раз в 5 секунд. Это не задержка всего VPN-туннеля. Используется текущая системная маршрутизация. Если ICMP заблокирован или ping недоступен, показано «—».')}
+                {ping.host && <p className="mono">{ping.host}</p>}
+              </InfoTip>
+            </small>
           </div>
         </div>
         <div className="profile-picker">

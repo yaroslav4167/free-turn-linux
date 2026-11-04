@@ -1,4 +1,21 @@
 export namespace backend {
+
+	export class PingResult {
+	    serverId: string;
+	    host: string;
+	    milliseconds: number;
+
+	    static createFrom(source: any = {}) {
+	        return new PingResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.serverId = source["serverId"];
+	        this.host = source["host"];
+	        this.milliseconds = source["milliseconds"];
+	    }
+	}
 	
 	export class GuestShare {
 	    pub: string;

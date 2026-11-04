@@ -28,7 +28,7 @@ export default function ServerForm({value: s, onChange}: Props) {
           <label>{tr('Ссылки на звонки VK Calls (по одной в строке)', 'VK Calls links (one per line)')}</label>
           <textarea
             value={(s.vkLinks ?? []).join('\n')}
-            onChange={(e) => patch({vkLinks: e.target.value.split('\n').map((v) => v.trim()).filter(Boolean)})}
+            onChange={(e) => patch({vkLinks: e.target.value.split('\n')})}
             placeholder="https://vk.ru/call/join/..."
           />
         </div>

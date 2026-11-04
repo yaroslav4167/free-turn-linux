@@ -2,6 +2,12 @@
   "code": "en",
   "name": "English",
   "messages": {
+    "О режимах списков маршрутизации": "About routing list modes",
+    "Об ограничениях маршрутизации": "About routing limitations",
+    "Пинг": "Ping",
+    "мс": "ms",
+    "О пинге сервера": "About server ping",
+    "ICMP до адреса сервера, примерно раз в 5 секунд. Это не задержка всего VPN-туннеля. Используется текущая системная маршрутизация. Если ICMP заблокирован или ping недоступен, показано «—».": "ICMP to the server address, approximately every 5 seconds. This is not the latency of the entire VPN tunnel. Uses the current system routes. If ICMP is blocked or ping is unavailable, ‘—’ is shown.",
     "Несохранённые изменения будут потеряны. Продолжить?": "Unsaved changes will be lost. Continue?",
     "Закрыть сообщение": "Dismiss message",
     "ДИАГНОСТИКА": "DIAGNOSTICS",

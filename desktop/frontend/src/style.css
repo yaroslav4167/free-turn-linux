@@ -913,7 +913,7 @@ button:disabled {
   border-color: #ffffff12;
 }
 .connection-center {
-  flex: 1;
+  flex: 1 0 auto;
   min-height: 310px;
   display: flex;
   flex-direction: column;
@@ -922,6 +922,7 @@ button:disabled {
   padding: 24px 0;
   text-align: center;
 }
+.connection-center > * { flex-shrink: 0; }
 .mode-badge {
   display: inline-flex;
   align-items: center;
@@ -1022,11 +1023,13 @@ button:disabled {
 .power-button[aria-busy='true'] .power-idle-icon { opacity: 0; }
 .power-button[aria-busy='true'] .connection-loader { opacity: 1; }
 .connection-center h2 {
-  margin: 20px 0 8px;
+  margin: 8px 0 6px;
   font-size: 18px;
   font-weight: 500;
 }
 .connection-center p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   color: var(--text-dim);
   margin: 0;
   font-size: 12px;
@@ -1047,9 +1050,15 @@ button:disabled {
   margin-top: 10px;
 }
 .connection-bottom {
+  flex-shrink: 0;
   width: 100%;
   max-width: 630px;
   align-self: center;
+}
+@media (max-height: 700px) {
+  .workspace > .connection-page { padding-top: 16px; padding-bottom: 16px; }
+  .connection-center { padding: 8px 0 12px; }
+  .power-button { margin-top: 14px; }
 }
 .traffic-grid {
   display: grid;
@@ -1335,3 +1344,7 @@ button:disabled {
   background: var(--bg-input);
   color: var(--text);
 }
+.traffic-card .connection-ping { display: flex; align-items: center; gap: 4px; }
+.connection-ping .info-tip-button { font-size: 11px; padding: 0 2px; }
+.routing-list-heading { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
+.routing-list-heading h3 { margin: 0; }

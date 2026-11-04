@@ -177,6 +177,10 @@ func (a *App) Status() backend.Status {
 	return a.engine.Status()
 }
 
+func (a *App) MeasurePing(serverID string) (backend.PingResult, error) {
+	return a.engine.MeasurePing(serverID)
+}
+
 func (a *App) ConfigCommand(id string) (string, error) {
 	srv, ok := a.store.Get(id)
 	if !ok {

@@ -43,6 +43,8 @@ export function ListServers():Promise<Array<backend.Server>>;
 
 export function MinimiseToTray():Promise<void>;
 
+export function MeasurePing(arg1:string):Promise<backend.PingResult>;
+
 export function NewServer():Promise<backend.Server>;
 
 export function ParseLink(arg1:string):Promise<backend.ShareLink>;

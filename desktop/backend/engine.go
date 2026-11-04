@@ -49,11 +49,13 @@ type Engine struct {
 	ctx   context.Context
 	store *Store
 
-	mu         sync.Mutex
-	serverID   string
-	traffic    trafficMeter
-	planCancel context.CancelFunc
-	captchaURL string
+	mu             sync.Mutex
+	serverID       string
+	traffic        trafficMeter
+	planCancel     context.CancelFunc
+	captchaURL     string
+	pingCancel     context.CancelFunc
+	pingGeneration uint64
 }
 
 func NewEngine(store *Store) *Engine {
@@ -164,6 +166,7 @@ func (e *Engine) Disconnect() {
 func (e *Engine) forceStop() {
 	e.mu.Lock()
 	e.captchaURL = ""
+	e.cancelPingLocked()
 	e.mu.Unlock()
 	mobile.Stop()
 	wintunnel.Disconnect()
@@ -206,6 +209,7 @@ func (e *Engine) OnState(state string, streams, total int, errMsg string) {
 	if state == mobile.StateIdle || state == mobile.StateError {
 		e.mu.Lock()
 		e.captchaURL = ""
+		e.cancelPingLocked()
 		e.mu.Unlock()
 	}
 	if e.ctx == nil {
