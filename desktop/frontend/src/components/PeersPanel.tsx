@@ -22,19 +22,24 @@ export default function PeersPanel({server}: Props) {
   const [busy, setBusy] = useState(false)
   const [newName, setNewName] = useState('')
   const [shareState, setShareState] = useState<ShareState | null>(null)
-  const inflight = useRef(false)
+  const generation = useRef(0)
+  const inflight = useRef<{generation: number} | null>(null)
 
   const refresh = useCallback(async () => {
-    if (inflight.current) return
-    inflight.current = true
+    if (inflight.current?.generation === generation.current) return
+    const request = {generation: generation.current}
+    inflight.current = request
     try {
-      setList(await ServerPeers(server.id))
+      const result = await ServerPeers(server.id)
+      if (request.generation !== generation.current) return
+      setList(result)
       setError('')
     } catch (e) {
+      if (request.generation !== generation.current) return
       // Keep showing the last good list: one failed poll shouldn't blank the panel.
       setError(String(e))
     } finally {
-      inflight.current = false
+      if (inflight.current === request) inflight.current = null
     }
   }, [server.id])
 
@@ -47,7 +52,11 @@ export default function PeersPanel({server}: Props) {
     const timer = setInterval(() => {
       if (document.visibilityState === 'visible') refresh()
     }, REFRESH_MS)
-    return () => clearInterval(timer)
+    return () => {
+      clearInterval(timer)
+      generation.current++
+      inflight.current = null
+    }
   }, [refresh])
 
   const rows = useMemo(() => {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"runtime"
 	"sync"
 	"time"
 
@@ -116,6 +117,7 @@ func (e *Engine) Connect(srv Server) error {
 		if err != nil {
 			return fmt.Errorf("VPN endpoints: %w", err)
 		}
+		exclusions = routeExclusions(runtime.GOOS, exclusions)
 		params, parseErr := mobile.ParseTunnelConfig(srv.WgClientConf, DefaultTunnelMTU)
 		if parseErr != nil {
 			return parseErr

@@ -7,8 +7,25 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/samosvalishe/free-turn-proxy/desktop/backend/routing"
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/serversetup"
 )
+
+func TestLinuxManagementFollowsVPNRoutes(t *testing.T) {
+	ips := []string{"138.124.29.112"}
+	if got := routeExclusions("linux", ips); len(got) != 0 {
+		t.Fatalf("Linux must not force SSH over a blocked physical route: %v", got)
+	}
+	if got := routeExclusions("windows", ips); !reflect.DeepEqual(got, ips) {
+		t.Fatalf("Windows route handling changed: %v", got)
+	}
+	plan, err := routing.Build(context.Background(), "0.0.0.0/0", "", []routing.List{{
+		Name: "VPS", Enabled: true, Mode: routing.Whitelist, Entries: ips,
+	}}, nil, routeExclusions("linux", ips)...)
+	if err != nil || plan != "138.124.29.112/32" {
+		t.Fatalf("explicit VPS VPN route was removed: %q, %v", plan, err)
+	}
+}
 
 type exclusionResolver func(context.Context, string, string) ([]netip.Addr, error)
 

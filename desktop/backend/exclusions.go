@@ -11,6 +11,17 @@ import (
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/routing"
 )
 
+// Linux already binds relay sockets to the physical interface. A global host
+// route for the VPS would also force SSH outside the VPN, making management
+// impossible on networks where that direct path is blocked. Leave ordinary
+// sockets (including SSH) on the user's profile/split-tunnel routes instead.
+func routeExclusions(platform string, resolved []string) []string {
+	if platform == "linux" {
+		return nil
+	}
+	return resolved
+}
+
 // Resolve before stopping the current session or changing any system routes.
 // The privileged helper deliberately continues to accept IP literals only.
 func resolveExclusions(ctx context.Context, srv Server, resolver routing.Resolver) ([]string, error) {
