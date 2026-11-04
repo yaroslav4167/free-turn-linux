@@ -65,6 +65,19 @@ func main() {
 		fmt.Println("FreeTurn desktop shortcut:", path)
 		return
 	}
+	if len(os.Args) == 2 && (os.Args[1] == "--configure-vpn-helper" || os.Args[1] == "--uninstall-desktop") {
+		var err error
+		if os.Args[1] == "--configure-vpn-helper" {
+			err = integration.ConfigureVPNHelper(false)
+		} else {
+			err = integration.Uninstall()
+		}
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) == 3 && os.Args[1] == "--vpn-helper" {
 		if err := wintunnel.RunHelper(os.Args[2]); err != nil {
 			fmt.Fprintln(os.Stderr, err)

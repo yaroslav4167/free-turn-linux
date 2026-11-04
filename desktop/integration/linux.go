@@ -276,7 +276,7 @@ func ConfigureVPNHelper(remove bool) error {
 	if !remove {
 		helper := filepath.Join(filepath.Dir(executable), "freeturn-vpn-helper")
 		if _, err := os.Stat(helper); err != nil {
-			return fmt.Errorf("не найден VPN-helper по пути %s: %w; пересоберите приложение через wails build и обновите установленную копию через «Установить / обновить»", helper, err)
+			return fmt.Errorf("не найден VPN-helper по пути %s: %w; запустите install-desktop.sh из полного архива", helper, err)
 		}
 		args = []string{executable, "--install-vpn-service", helper, uid}
 	}

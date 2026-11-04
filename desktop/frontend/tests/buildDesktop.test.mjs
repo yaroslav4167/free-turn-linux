@@ -30,7 +30,7 @@ test('desktop build script packages both binaries, documentation and checksums',
     mkdirSync(join(repo, path), {recursive: true})
   }
   cpSync(join(root, 'packaging/linux/build-desktop.sh'), join(repo, 'packaging/linux/build-desktop.sh'))
-  for (const path of ['README.md', 'LICENSE', 'desktop/assets/icon.svg', 'packaging/linux/install-desktop.sh', 'packaging/linux/freeturn.desktop', 'docs/screenshots/test.png']) {
+  for (const path of ['README.md', 'LICENSE', 'desktop/assets/icon.svg', 'packaging/linux/install-desktop.sh', 'packaging/linux/uninstall-desktop.sh', 'packaging/linux/freeturn.desktop', 'docs/screenshots/test.png']) {
     writeFileSync(join(repo, path), 'test fixture')
   }
   const stub = (name, content) => writeFileSync(join(tools, name), '#!/bin/sh\nset -eu\n' + content, {mode: 0o755})
@@ -64,7 +64,7 @@ if [ "\${SKIP_HELPER:-}" != 1 ]; then printf 'helper' > build/bin/freeturn-vpn-h
     const size = parseInt(tar.subarray(offset + 124, offset + 136).toString().replace(/\0.*$/s, '').trim(), 8) || 0
     offset += 512 + Math.ceil(size / 512) * 512
   }
-  for (const entry of ['freeturn-desktop', 'freeturn-vpn-helper', 'install-desktop.sh', 'freeturn.desktop', 'desktop/assets/icon.svg', 'docs/screenshots/test.png']) {
+  for (const entry of ['freeturn-desktop', 'freeturn-vpn-helper', 'install-desktop.sh', 'uninstall-desktop.sh', 'freeturn.desktop', 'desktop/assets/icon.svg', 'docs/screenshots/test.png']) {
     assert.ok(entries.includes('./' + entry), entry)
   }
   const digest = createHash('sha256').update(readFileSync(archive)).digest('hex')

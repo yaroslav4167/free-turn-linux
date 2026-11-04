@@ -11,8 +11,8 @@ test('native WebKit startup configures compatibility before creating the window'
   assert.doesNotMatch(main, /WebviewGpuPolicy:\s+linux\.WebviewGpuPolicyNever/)
 })
 
-test('renderer selection is removed and compatibility notes remain visible', () => {
+test('renderer selection and compatibility notices are absent from settings', () => {
   const component = read('desktop/frontend/src/components/DesktopPreferences.tsx')
   assert.doesNotMatch(component, /SetRenderingMode|rendering-mode-field|settings\.renderingMode/)
-  assert.match(component, /settings\.renderingNote/)
+  assert.doesNotMatch(component, /settings\.renderingNote/)
 })

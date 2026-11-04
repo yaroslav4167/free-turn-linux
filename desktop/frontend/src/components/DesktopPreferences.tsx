@@ -54,61 +54,6 @@ export default function DesktopPreferences({version}: {version: string}) {
       {!settings && !error && <p>Загрузка настроек…</p>}
       {settings && (
         <>
-          <UpdatePreferences autoCheck={settings.autoCheckUpdates} disabled={busy} canInstall={settings.supported}
-            onAutoCheck={(enabled) => run(() => desktop().SetAutoCheckUpdates(enabled))} />
-          {settings.renderingNote && (
-            <div className="notice info" role="status">{settings.renderingNote}</div>
-          )}
-          <div className="settings-card">
-            <h2>
-              <Icon name="shield" /> Подключение VPN без пароля
-            </h2>
-            <p>
-              {settings.vpnHelperAvailable
-                ? 'Системный helper установлен: новые подключения не требуют пароля.'
-                : 'Сейчас при каждом подключении используется pkexec с запросом пароля.'}
-            </p>
-            <p>
-              Один раз подтвердите установку системного компонента. Он получает только права настройки сети, а доступ к
-              нему разрешён только вашей учётной записи. Сам интерфейс работает без root.
-            </p>
-            <button
-              className="btn primary"
-              disabled={busy || !settings.supported}
-              onClick={() => {
-                if (
-                  window.confirm(
-                    'Установить или обновить системный VPN-helper? Потребуется пароль администратора один раз. Ваша учётная запись получит постоянное разрешение на настройку VPN через этот компонент.',
-                  )
-                ) {
-                  run(
-                    () => desktop().InstallVPNHelper(),
-                    'VPN-helper установлен. Следующее подключение пройдёт без запроса пароля.',
-                  )
-                }
-              }}
-            >
-              {settings.vpnHelperAvailable ? 'Обновить VPN-helper' : 'Установить VPN-helper'}
-            </button>
-            {settings.vpnHelperAvailable && (
-              <button
-                className="btn danger"
-                disabled={busy}
-                style={{marginLeft: 10}}
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      'Удалить доступ к VPN-helper? Активное VPN-соединение будет отключено. Снова потребуется пароль при каждом подключении.',
-                    )
-                  ) {
-                    run(() => desktop().RemoveVPNHelper(), 'Доступ к системному VPN-helper удалён.')
-                  }
-                }}
-              >
-                Удалить доступ
-              </button>
-            )}
-          </div>
           <div className="settings-card">
             <h2>
               <Icon name="settings" /> Поведение
@@ -156,7 +101,7 @@ export default function DesktopPreferences({version}: {version: string}) {
               </select>
             </label>
             <p className="settings-note">
-              Для VPN без запроса пароля установите системный VPN-helper. Капча может потребовать ручного ввода.
+              Капча может потребовать ручного ввода.
               При ошибке повторите подключение вручную.
             </p>
             {settings.autoConnectError && (
@@ -195,45 +140,8 @@ export default function DesktopPreferences({version}: {version: string}) {
               <Icon name="tray" size={17} /> Свернуть в трей
             </button>
           </div>
-          <div className="settings-card">
-            <h2>
-              <Icon name="download" /> Установка
-            </h2>
-            <p>
-              Установить клиент для текущего пользователя и добавить FreeTurn в меню приложений. Права администратора не
-              нужны.
-            </p>
-            <p className="install-path mono">{settings.installedPath}</p>
-            <button
-              className="btn primary"
-              disabled={busy || !settings.supported}
-              onClick={() =>
-                run(
-                  () => desktop().InstallDesktop(),
-                  'FreeTurn установлен. Теперь его можно открыть из меню приложений.',
-                )
-              }
-            >
-              {busy ? 'Подождите…' : 'Установить / обновить'}
-            </button>
-            <p className="settings-note">Ярлык в меню устанавливается с собственной иконкой FreeTurn.</p>
-            <button
-              className="btn"
-              style={{marginTop: 12}}
-              disabled={busy || !settings.supported}
-              onClick={() =>
-                run(
-                  () => desktop().CreateDesktopShortcut(),
-                  'Ярлык создан на рабочем столе. Если окружение попросит, выберите «Разрешить запуск».',
-                )
-              }
-            >
-              <Icon name="plus" size={17} /> Ярлык на рабочий стол
-            </button>
-            <p className="settings-note">
-              Автозапуск также устанавливает стабильную копию клиента — распакованный архив можно перенести или удалить.
-            </p>
-          </div>
+          <UpdatePreferences autoCheck={settings.autoCheckUpdates} disabled={busy} canInstall={settings.supported}
+            onAutoCheck={(enabled) => run(() => desktop().SetAutoCheckUpdates(enabled))} />
         </>
       )}
       <footer className="settings-about">

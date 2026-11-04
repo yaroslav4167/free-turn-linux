@@ -53,8 +53,8 @@ stage=$(mktemp -d "$root/dist/.desktop-package.XXXXXX")
 trap 'rm -r -- "$stage"' EXIT
 trap 'exit 1' HUP INT TERM
 cp desktop/build/bin/freeturn-desktop desktop/build/bin/freeturn-vpn-helper "$stage/"
-cp README.md LICENSE packaging/linux/install-desktop.sh packaging/linux/freeturn.desktop "$stage/"
-chmod +x "$stage/install-desktop.sh"
+cp README.md LICENSE packaging/linux/install-desktop.sh packaging/linux/uninstall-desktop.sh packaging/linux/freeturn.desktop "$stage/"
+chmod +x "$stage/install-desktop.sh" "$stage/uninstall-desktop.sh"
 cp desktop/assets/icon.svg "$stage/freeturn.svg"
 mkdir -p "$stage/desktop/assets" "$stage/docs"
 cp desktop/assets/icon.svg "$stage/desktop/assets/"

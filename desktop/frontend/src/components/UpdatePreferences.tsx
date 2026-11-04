@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react'
 import {desktop, UpdateState} from '../desktop'
 import Icon from './Icon'
+import InfoTip from './InfoTip'
 import {readDismissedUpdate, saveDismissedUpdate, updateNoticeId} from '../updateNotice'
 import {updateProgress, UpdateAction} from '../updateProgress'
 
@@ -76,40 +77,34 @@ export default function UpdatePreferences({autoCheck, onAutoCheck, disabled, can
   const busy = pending !== null || !!state?.busy
   const progress = updateProgress(state, pending)
   return (
-    <div className="settings-card">
+    <div className="settings-card updates-card">
       <h2>
         <Icon name="download" /> Обновления
       </h2>
-      <p>Версия приложения: <strong>{state?.currentVersion || '…'}</strong></p>
-      {state && !state.currentKnown && (
-        <p className="settings-note">
-          Тестовая сборка: версия не задана, сравнение с релизом недоступно. Стабильный релиз можно скачать вручную.
-        </p>
-      )}
-      <label className="preference-row">
-        <div>
-          <strong>Проверять обновления автоматически</strong>
-          <p>Через 10 секунд после запуска и затем каждые 6 часов. Проверка обращается к публичному GitHub API.</p>
+      <div className="update-summary">
+        <span>Версия: <strong>{state?.currentVersion || '…'}</strong></span>
+        <InfoTip label="Об источнике обновлений">
+          {state?.repository ? `Источник: github.com/${state.repository}. Только стабильные релизы; ключи и профили не передаются.`
+            : 'Репозиторий обновлений не задан при сборке. Для локальной сборки задайте UPDATE_REPOSITORY.'}
+          {state && !state.currentKnown && <p>Тестовая сборка: сравнение версий недоступно.</p>}
+          {state?.checkedAt && <p>Проверено: {new Date(state.checkedAt).toLocaleString()}</p>}
+        </InfoTip>
+        {state?.checkedAt && <span>{state.available ? `Доступна ${state.latestVersion}` : 'Обновлений нет'}</span>}
+      </div>
+      <div className="preference-row">
+        <div className="update-summary">
+          <label htmlFor="auto-check-updates"><strong>Автопроверка</strong></label>
+          <InfoTip label="О расписании автопроверки">Через 10 секунд после запуска, затем каждые 6 часов через публичный GitHub API.</InfoTip>
         </div>
         <input
+          id="auto-check-updates"
           type="checkbox"
           role="switch"
           checked={autoCheck}
           disabled={disabled || !state?.repository}
           onChange={(e) => onAutoCheck(e.target.checked)}
         />
-      </label>
-      <p className="settings-note">
-        {state?.repository
-          ? `Источник: github.com/${state.repository}, только стабильные Releases, не сборки Actions. Ключи и профили не передаются.`
-          : 'Репозиторий обновлений не задан при сборке. В Actions он берётся из github.repository; для локальной сборки задайте UPDATE_REPOSITORY.'}
-      </p>
-      {state?.checkedAt && (
-        <p>
-          Проверено: {new Date(state.checkedAt).toLocaleString()} · {state.available
-            ? `Доступна версия ${state.latestVersion}` : 'У вас актуальная или более новая версия'}
-        </p>
-      )}
+      </div>
       {(error || (!busy && state?.error)) && (
         <div className="notice error" role="alert">{error || state?.error}</div>
       )}
@@ -150,18 +145,6 @@ export default function UpdatePreferences({autoCheck, onAutoCheck, disabled, can
           Архив проверен по SHA-256 и сохранён: <span className="mono update-path">{state.downloadedPath}</span>
         </div>
       )}
-      {state?.installationMessage && !busy && (
-        <div className="notice info" role="status">
-          {state.installationMessage}
-          {state.backupPath && <p className="mono update-path">Резервная копия: {state.backupPath}</p>}
-        </div>
-      )}
-      <p className="settings-note">
-        «Скачать и установить» запрашивает подтверждение, проверяет архив, отключает VPN и перезапускает клиент.
-        Бинарники устанавливаются в пользовательский каталог без sudo, с резервной копией для отката.
-        Отдельная кнопка «Скачать» только сохраняет архив в выбранное место.
-        Системный VPN-helper обновляется отдельно с подтверждением администратора. Установки без подтверждения нет.
-      </p>
     </div>
   )
 }

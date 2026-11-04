@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/samosvalishe/free-turn-proxy/desktop/integration"
@@ -43,6 +44,10 @@ func (a *App) startUpdateChecks(ctx context.Context) {
 func (a *App) UpdateState() updates.State {
 	state := a.updater.State()
 	state.InstallationMessage, state.BackupPath = a.updateResult.Message, a.updateResult.BackupPath
+	// Success notices are transient in settings, but failures/rollback must remain visible.
+	if state.Error == "" && a.updateResult.Message != "" && !strings.HasPrefix(a.updateResult.Message, "Обновление установлено.") {
+		state.Error = a.updateResult.Message
+	}
 	return state
 }
 func (a *App) CheckForUpdates() error { return a.updater.Check(a.updateContext) }
