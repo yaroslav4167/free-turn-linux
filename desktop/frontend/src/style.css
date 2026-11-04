@@ -1325,3 +1325,13 @@ button:disabled {
 .info-tip-content > :first-child { margin-top: 0; }
 .info-tip-content > :last-child { margin-bottom: 0; }
 .updates-card .preference-row { padding: 10px 0; }
+.language-row { gap: 16px; flex-wrap: wrap; }
+.language-row select {
+  width: 180px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-input);
+  color: var(--text);
+}

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/godbus/dbus/v5"
+	"github.com/samosvalishe/free-turn-proxy/desktop/locale"
 )
 
 const throttleWindow = 5 * time.Second
@@ -49,15 +50,16 @@ func ShowCaptchaNotification(captchaURL string, onOpen func()) error {
 			}
 		}
 	}
-	err = showInteractiveNotification("FreeTurn: требуется решение капчи VK",
-		"Нажмите уведомление или «Открыть в браузере», чтобы пройти проверку.", onOpen)
+	title := locale.Text("FreeTurn: требуется решение капчи VK", "FreeTurn: VK captcha verification required")
+	err = showInteractiveNotification(title,
+		locale.Text("Нажмите уведомление или «Открыть в браузере», чтобы пройти проверку.", "Click this notification or ‘Open in browser’ to complete verification."), onOpen)
 	if err == nil {
 		return nil
 	}
 	// Not all notification servers implement actions. Keep the existing
 	// in-application captcha button as the portable fallback.
-	fallback := ShowNotification("FreeTurn: требуется решение капчи VK",
-		"Откройте FreeTurn и нажмите «Открыть проверку в браузере».", link)
+	fallback := ShowNotification(title,
+		locale.Text("Откройте FreeTurn и нажмите «Открыть проверку в браузере».", "Open FreeTurn and click ‘Open verification in browser’."), link)
 	if fallback != nil {
 		return errors.Join(err, fallback)
 	}
@@ -106,7 +108,7 @@ func showInteractiveNotification(title, body string, onOpen func()) error {
 		}
 	}
 	var id uint32
-	actions := []string{"default", "Открыть проверку", "open", "Открыть в браузере"}
+	actions := []string{"default", locale.Text("Открыть проверку", "Open verification"), "open", locale.Text("Открыть в браузере", "Open in browser")}
 	hints := map[string]dbus.Variant{"desktop-entry": dbus.MakeVariant("freeturn")}
 	if err := object.CallWithContext(ctx, notificationService+".Notify", 0,
 		"FreeTurn", uint32(0), "freeturn", title, body, actions, hints, int32(-1)).Store(&id); err != nil {

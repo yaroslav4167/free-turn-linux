@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/samosvalishe/free-turn-proxy/desktop/integration"
+	"github.com/samosvalishe/free-turn-proxy/desktop/locale"
 	"github.com/samosvalishe/free-turn-proxy/desktop/updates"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -70,8 +71,8 @@ func (a *App) DownloadUpdate() error {
 		return errors.New("сначала проверьте доступное обновление")
 	}
 	destination, err := wailsruntime.SaveFileDialog(a.ctx, wailsruntime.SaveDialogOptions{
-		Title: "Сохранить обновление FreeTurn", DefaultFilename: state.AssetName,
-		Filters: []wailsruntime.FileFilter{{DisplayName: "Архив Linux (*.tar.gz)", Pattern: "*.tar.gz"}},
+		Title: locale.Text("Сохранить обновление FreeTurn", "Save FreeTurn update"), DefaultFilename: state.AssetName,
+		Filters: []wailsruntime.FileFilter{{DisplayName: locale.Text("Архив Linux (*.tar.gz)", "Linux archive (*.tar.gz)"), Pattern: "*.tar.gz"}},
 	})
 	if err != nil || destination == "" {
 		return err
@@ -99,8 +100,8 @@ func (a *App) InstallUpdate() error {
 		return err
 	}
 	answer, err := wailsruntime.MessageDialog(a.ctx, wailsruntime.MessageDialogOptions{
-		Type: wailsruntime.QuestionDialog, Title: "Установить обновление FreeTurn?",
-		Message: "Скачать и проверить " + state.LatestVersion + ", отключить VPN и перезапустить клиент?\nБинарники будут установлены в " + filepath.Dir(target) + ".\nПредыдущая пара сохранится для отката. Профили и настройки сохранятся. Системный VPN-helper автоматически не заменяется.",
+		Type: wailsruntime.QuestionDialog, Title: locale.Text("Установить обновление FreeTurn?", "Install FreeTurn update?"),
+		Message: locale.Text("Скачать и проверить "+state.LatestVersion+", отключить VPN и перезапустить клиент?\nБинарники будут установлены в "+filepath.Dir(target)+".\nПредыдущая пара сохранится для отката. Профили и настройки сохранятся. Системный VPN-helper автоматически не заменяется.", "Download and verify "+state.LatestVersion+", disconnect VPN and restart the client?\nBinaries will be installed in "+filepath.Dir(target)+".\nThe previous pair will be kept for rollback. Profiles and settings are preserved. The system VPN helper is not replaced automatically."),
 		// Wails on Linux uses GTK's Yes/No buttons and returns "Yes"/"No"
 		// regardless of the displayed locale or custom button labels.
 		Buttons: []string{"Yes", "No"}, DefaultButton: "No", CancelButton: "No",

@@ -12,6 +12,7 @@ import (
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
 	"github.com/godbus/dbus/v5/prop"
+	"github.com/samosvalishe/free-turn-proxy/desktop/locale"
 )
 
 const (
@@ -57,15 +58,26 @@ func menuProps(id int32) map[string]dbus.Variant {
 	if id == 0 {
 		return map[string]dbus.Variant{"children-display": dbus.MakeVariant("submenu")}
 	}
-	label := "Открыть FreeTurn"
+	label := locale.Text("Открыть FreeTurn", "Open FreeTurn")
 	if id == 2 {
-		label = "Выход"
+		label = locale.Text("Выход", "Quit")
 	}
 	return map[string]dbus.Variant{
 		"label":   dbus.MakeVariant(label),
 		"enabled": dbus.MakeVariant(true),
 		"visible": dbus.MakeVariant(true),
 	}
+}
+
+func (t *Tray) RefreshLanguage() {
+	if t == nil || t.conn == nil {
+		return
+	}
+	removed := []struct {
+		ID    int32
+		Names []string
+	}{}
+	_ = t.conn.Emit("/MenuBar", menuInterface+".ItemsPropertiesUpdated", []menuProperties{{1, menuProps(1)}, {2, menuProps(2)}}, removed)
 }
 
 func (m *trayMenu) GetLayout(parentID, depth int32, names []string) (uint32, menuLayout, *dbus.Error) {

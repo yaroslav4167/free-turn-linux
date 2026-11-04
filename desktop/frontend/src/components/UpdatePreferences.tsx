@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react'
 import {desktop, UpdateState} from '../desktop'
 import Icon from './Icon'
 import InfoTip from './InfoTip'
+import {currentLanguage, tr} from '../language'
 import {readDismissedUpdate, saveDismissedUpdate, updateNoticeId} from '../updateNotice'
 import {updateProgress, UpdateAction} from '../updateProgress'
 
@@ -40,13 +41,13 @@ export function UpdateNotice({onOpen}: {onOpen: () => void}) {
   }
   return (
     <div className="notice info app-error" role="status">
-      <span>{state.currentKnown ? 'Доступно обновление' : 'Доступен стабильный релиз'} FreeTurn {state.latestVersion}.</span>
+      <span>{state.currentKnown ? tr('Доступно обновление', 'Update available') : tr('Доступен стабильный релиз', 'Stable release available')} FreeTurn {state.latestVersion}.</span>
       <div className="inline-actions update-notice-actions">
         <button className="btn small" onClick={onOpen}>
-          Открыть настройки
+          {tr('Открыть настройки', 'Open settings')}
         </button>
         <button className="btn small ghost" onClick={dismiss}
-          aria-label="Скрыть уведомление об обновлении" title="Скрыть уведомление об этой версии">
+          aria-label={tr('Скрыть уведомление об обновлении', 'Dismiss update notification')} title={tr('Скрыть уведомление об этой версии', 'Dismiss notification for this version')}>
           ×
         </button>
       </div>
@@ -79,22 +80,22 @@ export default function UpdatePreferences({autoCheck, onAutoCheck, disabled, can
   return (
     <div className="settings-card updates-card">
       <h2>
-        <Icon name="download" /> Обновления
+        <Icon name="download" /> {tr('Обновления', 'Updates')}
       </h2>
       <div className="update-summary">
-        <span>Версия: <strong>{state?.currentVersion || '…'}</strong></span>
-        <InfoTip label="Об источнике обновлений">
-          {state?.repository ? `Источник: github.com/${state.repository}. Только стабильные релизы; ключи и профили не передаются.`
-            : 'Репозиторий обновлений не задан при сборке. Для локальной сборки задайте UPDATE_REPOSITORY.'}
-          {state && !state.currentKnown && <p>Тестовая сборка: сравнение версий недоступно.</p>}
-          {state?.checkedAt && <p>Проверено: {new Date(state.checkedAt).toLocaleString()}</p>}
+        <span>{tr('Версия:', 'Version:')} <strong>{state?.currentVersion || '…'}</strong></span>
+        <InfoTip label={tr('Об источнике обновлений', 'About the update source')}>
+          {state?.repository ? tr('Источник: github.com/{repository}. Только стабильные релизы; ключи и профили не передаются.', {repository: state.repository})
+            : tr('Репозиторий обновлений не задан при сборке. Для локальной сборки задайте UPDATE_REPOSITORY.', 'No update repository configured in this build. Set UPDATE_REPOSITORY for local builds.')}
+          {state && !state.currentKnown && <p>{tr('Тестовая сборка: сравнение версий недоступно.', 'Development build: version comparison unavailable.')}</p>}
+          {state?.checkedAt && <p>{tr('Проверено:', 'Last checked:')} {new Date(state.checkedAt).toLocaleString(currentLanguage())}</p>}
         </InfoTip>
-        {state?.checkedAt && <span>{state.available ? `Доступна ${state.latestVersion}` : 'Обновлений нет'}</span>}
+        {state?.checkedAt && <span>{state.available ? tr('Доступна {version}', {version: state.latestVersion}) : tr('Обновлений нет', 'No updates')}</span>}
       </div>
       <div className="preference-row">
         <div className="update-summary">
-          <label htmlFor="auto-check-updates"><strong>Автопроверка</strong></label>
-          <InfoTip label="О расписании автопроверки">Через 10 секунд после запуска, затем каждые 6 часов через публичный GitHub API.</InfoTip>
+          <label htmlFor="auto-check-updates"><strong>{tr('Автопроверка', 'Automatic checks')}</strong></label>
+          <InfoTip label={tr('О расписании автопроверки', 'About the update schedule')}>{tr('Через 10 секунд после запуска, затем каждые 6 часов через публичный GitHub API.', '10 seconds after launch, then every 6 hours using the public GitHub API.')}</InfoTip>
         </div>
         <input
           id="auto-check-updates"
@@ -110,21 +111,21 @@ export default function UpdatePreferences({autoCheck, onAutoCheck, disabled, can
       )}
       <div className="inline-actions update-actions">
         <button className="btn" disabled={busy || !state?.repository} onClick={() => run('checking', () => desktop().CheckForUpdates())}>
-          {state?.busy === 'checking' ? 'Проверка…' : 'Проверить обновления'}
+          {state?.busy === 'checking' ? tr('Проверка…', 'Checking…') : tr('Проверить обновления', 'Check for updates')}
         </button>
         {state?.available && (
           <button className="btn primary" disabled={busy || !canInstall} onClick={() => run('installing', () => desktop().InstallUpdate())}>
-            {pending === 'installing' || state.busy === 'preparing' || state.busy === 'restarting' ? 'Подготовка обновления…' : 'Скачать и установить'}
+            {pending === 'installing' || state.busy === 'preparing' || state.busy === 'restarting' ? tr('Подготовка обновления…', 'Preparing update…') : tr('Скачать и установить', 'Download and install')}
           </button>
         )}
         {state?.available && (
           <button className="btn primary" disabled={busy} onClick={() => run('downloading', () => desktop().DownloadUpdate())}>
-            <Icon name="download" size={17} /> {state.busy === 'downloading' ? 'Скачивание…' : `Скачать ${state.latestVersion}`}
+            <Icon name="download" size={17} /> {state.busy === 'downloading' ? tr('Скачивание…', 'Downloading…') : tr('Скачать {version}', {version: state.latestVersion})}
           </button>
         )}
       </div>
       {progress && (
-        <section className="update-task" aria-label="Ход обновления" aria-busy="true">
+        <section className="update-task" aria-label={tr('Ход обновления', 'Update progress')} aria-busy="true">
           <div className="update-task-heading">
             <strong role="status">{progress.title}</strong>
             {progress.percent !== null && <span className="mono">{progress.percent}%</span>}
@@ -142,7 +143,7 @@ export default function UpdatePreferences({autoCheck, onAutoCheck, disabled, can
       )}
       {state?.downloadedPath && !busy && (
         <div className="notice info" role="status">
-          Архив проверен по SHA-256 и сохранён: <span className="mono update-path">{state.downloadedPath}</span>
+          {tr('Архив проверен по SHA-256 и сохранён:', 'Archive verified with SHA-256 and saved:')} <span className="mono update-path">{state.downloadedPath}</span>
         </div>
       )}
     </div>

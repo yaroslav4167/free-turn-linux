@@ -1,4 +1,5 @@
 import {backend} from '../api'
+import {tr} from '../language'
 
 interface Props {
   servers: backend.Server[]
@@ -13,8 +14,8 @@ export default function Sidebar({servers, selectedId, activeState, activeServerI
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <h1>Серверы</h1>
-        <span className="version">Профили подключения · {servers.length}</span>
+        <h1>{tr('Серверы', 'Servers')}</h1>
+        <span className="version">{tr('Профили подключения', 'Connection profiles')} · {servers.length}</span>
       </div>
       <div className="server-list">
         {servers.map((s) => {
@@ -28,19 +29,19 @@ export default function Sidebar({servers, selectedId, activeState, activeServerI
             >
               <span className={'dot' + (isActive ? ' ' + activeState : '')} />
               <span className="name">
-                {s.name || s.peer || 'Без имени'}
+                {s.name || s.peer || tr('Без имени', 'Unnamed')}
                 <span className="peer">{s.peer}</span>
               </span>
             </button>
           )
         })}
         {servers.length === 0 && (
-          <div style={{color: 'var(--text-dim)', padding: '10px', fontSize: '12px'}}>Серверов пока нет</div>
+          <div style={{color: 'var(--text-dim)', padding: '10px', fontSize: '12px'}}>{tr('Серверов пока нет', 'No servers yet')}</div>
         )}
       </div>
       <div className="sidebar-footer">
         <button className="btn-add" onClick={onAdd}>
-          + Добавить сервер
+          + {tr('Добавить сервер', 'Add server')}
         </button>
       </div>
     </div>

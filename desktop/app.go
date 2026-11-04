@@ -13,6 +13,7 @@ import (
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/serversetup"
 	"github.com/samosvalishe/free-turn-proxy/desktop/backend/wintunnel"
 	"github.com/samosvalishe/free-turn-proxy/desktop/integration"
+	"github.com/samosvalishe/free-turn-proxy/desktop/locale"
 	"github.com/samosvalishe/free-turn-proxy/desktop/tray"
 	"github.com/samosvalishe/free-turn-proxy/desktop/updates"
 	"github.com/samosvalishe/free-turn-proxy/internal/wire/rtpopus"
@@ -59,6 +60,11 @@ func NewApp() *App {
 	if err != nil {
 		prefs = integration.Preferences{CloseToTray: false}
 	}
+	language := prefs.Language
+	if !locale.Supported(language) {
+		language = integration.SystemLanguage()
+	}
+	locale.Set(language)
 	return &App{
 		store: store, engine: backend.NewEngine(store), preferences: prefs,
 		updater:      updates.New(desktopVersion, runtime.GOARCH, updateRepository),

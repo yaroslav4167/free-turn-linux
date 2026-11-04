@@ -79,6 +79,8 @@ export function SetAutostart(arg1:boolean):Promise<void>;
 
 export function SetCloseToTray(arg1:boolean):Promise<void>;
 
+export function SetLanguage(arg1:string):Promise<void>;
+
 export function SetupCreateServer(arg1:serversetup.SSHConfig,arg2:backend.ServerSetupDraft,arg3:serversetup.WgSetupResult):Promise<backend.Server>;
 
 export function SetupDetectRootMode(arg1:serversetup.SSHConfig):Promise<serversetup.SSHConfig>;

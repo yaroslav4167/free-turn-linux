@@ -257,6 +257,8 @@ export namespace backend {
 export namespace main {
 	
 	export class DesktopSettings {
+	    language: string;
+	    systemLanguage: string;
 	    closeToTray: boolean;
 	    autostart: boolean;
 	    autoConnect: boolean;
@@ -277,6 +279,8 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.closeToTray = source["closeToTray"];
+	        this.language = source["language"];
+	        this.systemLanguage = source["systemLanguage"];
 	        this.autostart = source["autostart"];
 	        this.autoConnect = source["autoConnect"];
 	        this.autoConnectServerId = source["autoConnectServerId"];

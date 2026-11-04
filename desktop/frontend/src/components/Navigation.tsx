@@ -1,13 +1,8 @@
 import Icon, {IconName} from './Icon'
+import {tr} from '../language'
 
 export type View = 'connect' | 'servers' | 'logs' | 'settings'
 
-const items: {id: View; label: string; icon: IconName}[] = [
-  {id: 'connect', label: 'Подключение', icon: 'power'},
-  {id: 'servers', label: 'Серверы', icon: 'servers'},
-  {id: 'logs', label: 'Журнал', icon: 'logs'},
-  {id: 'settings', label: 'Настройки', icon: 'settings'},
-]
 
 export default function Navigation({
   view,
@@ -18,12 +13,18 @@ export default function Navigation({
   onChange: (view: View) => void
   version: string
 }) {
+  const items: {id: View; label: string; icon: IconName}[] = [
+    {id: 'connect', label: tr('Подключение', 'Connection'), icon: 'power'},
+    {id: 'servers', label: tr('Серверы', 'Servers'), icon: 'servers'},
+    {id: 'logs', label: tr('Журнал', 'Logs'), icon: 'logs'},
+    {id: 'settings', label: tr('Настройки', 'Settings'), icon: 'settings'},
+  ]
   return (
     <aside className="navigation">
       <div className="brand" aria-label="FreeTurn" title="FreeTurn">
         <img className="app-icon" src="/freeturn.svg" alt="FreeTurn" width="44" height="44" />
       </div>
-      <nav aria-label="Главное меню">
+      <nav aria-label={tr('Главное меню', 'Main menu')}>
         {items.map((item) => (
           <button
             key={item.id}

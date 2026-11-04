@@ -8,11 +8,14 @@ import (
 	"slices"
 
 	"github.com/samosvalishe/free-turn-proxy/desktop/integration"
+	"github.com/samosvalishe/free-turn-proxy/desktop/locale"
 	"github.com/samosvalishe/free-turn-proxy/desktop/tray"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type DesktopSettings struct {
+	Language            string `json:"language"`
+	SystemLanguage      string `json:"systemLanguage"`
 	CloseToTray         bool   `json:"closeToTray"`
 	Autostart           bool   `json:"autostart"`
 	AutoConnect         bool   `json:"autoConnect"`
@@ -86,6 +89,7 @@ func (a *App) DesktopSettings() (DesktopSettings, error) {
 		return DesktopSettings{}, err
 	}
 	return DesktopSettings{
+		Language: a.preferences.Language, SystemLanguage: integration.SystemLanguage(),
 		CloseToTray: a.preferences.CloseToTray, Autostart: autostart,
 		AutoConnect: a.preferences.AutoConnect, AutoConnectServerID: a.preferences.AutoConnectServerID,
 		AutoConnectError: a.autoConnectError,
@@ -95,6 +99,28 @@ func (a *App) DesktopSettings() (DesktopSettings, error) {
 		TrayError: a.trayError, InstalledPath: path,
 		VPNHelperAvailable: integration.VPNHelperAvailable(),
 	}, nil
+}
+
+func (a *App) SetLanguage(language string) error {
+	if !integration.ValidLanguage(language) {
+		return errors.New("unsupported interface language")
+	}
+	a.desktopMu.Lock()
+	defer a.desktopMu.Unlock()
+	prefs := a.preferences
+	prefs.Language = language
+	if err := integration.SavePreferences(prefs); err != nil {
+		return err
+	}
+	a.preferences = prefs
+	if language == "system" {
+		language = integration.SystemLanguage()
+	}
+	locale.Set(language)
+	if a.tray != nil {
+		a.tray.RefreshLanguage()
+	}
+	return nil
 }
 
 func (a *App) SetCloseToTray(enabled bool) error {

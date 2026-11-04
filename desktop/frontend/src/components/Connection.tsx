@@ -6,18 +6,19 @@ import {connectionState} from '../connectionState'
 import {powerShapeAt} from '../powerShape'
 import {usePowerMotion} from '../usePowerMotion'
 import ConnectionLoader from './ConnectionLoader'
+import {tr} from '../language'
 
 function rate(value: number): string {
-  if (value >= 1024 * 1024) return (value / (1024 * 1024)).toFixed(1) + ' МБ/с'
-  if (value >= 1024) return (value / 1024).toFixed(1) + ' КБ/с'
-  return Math.max(0, value).toFixed(0) + ' Б/с'
+  if (value >= 1024 * 1024) return (value / (1024 * 1024)).toFixed(1) + tr(' МБ/с', ' MB/s')
+  if (value >= 1024) return (value / 1024).toFixed(1) + tr(' КБ/с', ' KB/s')
+  return Math.max(0, value).toFixed(0) + tr(' Б/с', ' B/s')
 }
 
 function bytes(value: number): string {
-  if (value >= 1024 * 1024 * 1024) return (value / (1024 * 1024 * 1024)).toFixed(2) + ' ГБ'
-  if (value >= 1024 * 1024) return (value / (1024 * 1024)).toFixed(1) + ' МБ'
-  if (value >= 1024) return (value / 1024).toFixed(1) + ' КБ'
-  return Math.max(0, value).toFixed(0) + ' Б'
+  if (value >= 1024 * 1024 * 1024) return (value / (1024 * 1024 * 1024)).toFixed(2) + tr(' ГБ', ' GB')
+  if (value >= 1024 * 1024) return (value / (1024 * 1024)).toFixed(1) + tr(' МБ', ' MB')
+  if (value >= 1024) return (value / 1024).toFixed(1) + tr(' КБ', ' KB')
+  return Math.max(0, value).toFixed(0) + tr(' Б', ' B')
 }
 
 interface Props {
@@ -60,16 +61,16 @@ export default function Connection({
       <header className="page-heading">
         <div className="connection-brand">
           <h1>FreeTurn</h1>
-          <span>Личное соединение</span>
+          <span>{tr('Личное соединение', 'Your private connection')}</span>
         </div>
-        <button className="btn icon-button" onClick={onAdd} aria-label="Добавить сервер" title="Добавить сервер">
+        <button className="btn icon-button" onClick={onAdd} aria-label={tr('Добавить сервер', 'Add server')} title={tr('Добавить сервер', 'Add server')}>
           <Icon name="plus" size={22} />
         </button>
       </header>
       <div className={'connection-center ' + presentation.visualState}>
         <span className={'mode-badge' + (connected ? ' is-connected' : '')}>
           {connected ? <span className="connection-indicator" aria-hidden="true" /> : <Icon name="shield" size={14} />}
-          {connected ? 'Соединение активно' : vpn ? selected?.routingLists?.some((list) => list.enabled) ? 'VPN · списки маршрутизации' : 'VPN · маршруты профиля' : 'TURN · режим реле'}
+          {connected ? tr('Соединение активно', 'Connection active') : vpn ? selected?.routingLists?.some((list) => list.enabled) ? tr('VPN · списки маршрутизации', 'VPN · routing lists') : tr('VPN · маршруты профиля', 'VPN · profile routes') : tr('TURN · режим реле', 'TURN · relay mode')}
         </span>
         <button
           className={'power-button' + (active ? ' is-active' : '')}
@@ -102,14 +103,14 @@ export default function Connection({
         <h2 aria-live="polite">{presentation.heading}</h2>
         <p>
           {active
-            ? activeServer?.name || activeServer?.peer || 'Соединение активно'
+            ? activeServer?.name || activeServer?.peer || tr('Соединение активно', 'Connection active')
             : selected
-              ? 'Нажмите, чтобы подключиться к выбранному серверу'
-              : 'Добавьте первый сервер, чтобы начать'}
+              ? tr('Нажмите, чтобы подключиться к выбранному серверу', 'Click to connect to the selected server')
+              : tr('Добавьте первый сервер, чтобы начать', 'Add your first server to get started')}
         </p>
         {status.state === 'captcha' && captchaUrl && (
           <button className="btn primary" onClick={() => BrowserOpenURL(captchaUrl)}>
-            Открыть проверку в браузере
+            {tr('Открыть проверку в браузере', 'Open verification in browser')}
           </button>
         )}
         {status.state === 'error' && status.errMsg && (
@@ -117,7 +118,7 @@ export default function Connection({
         )}
         {connected && !vpn && (
           <p className="relay-hint">
-            Endpoint внешнего WireGuard-клиента: <span className="mono">{activeServer?.listen}</span>
+            {tr('Endpoint внешнего WireGuard-клиента:', 'External WireGuard client endpoint:')} <span className="mono">{activeServer?.listen}</span>
           </p>
         )}
       </div>
@@ -126,22 +127,22 @@ export default function Connection({
           <div className="traffic-card">
             <TrafficSparkline values={trafficHistory.rx} direction="rx" />
             <span>
-              <Icon name="download" size={17} /> Получено
+              <Icon name="download" size={17} /> {tr('Получено', 'Received')}
             </span>
             <strong>{rate(connected ? status.rxRate : 0)}</strong>
-            <small className="muted">Всего: {bytes(status.rxTotal)}</small>
+            <small className="muted">{tr('Всего:', 'Total:')} {bytes(status.rxTotal)}</small>
           </div>
           <div className="traffic-card">
             <TrafficSparkline values={trafficHistory.tx} direction="tx" />
             <span>
-              <Icon name="upload" size={17} /> Отправлено
+              <Icon name="upload" size={17} /> {tr('Отправлено', 'Sent')}
             </span>
             <strong>{rate(connected ? status.txRate : 0)}</strong>
-            <small className="muted">Всего: {bytes(status.txTotal)}</small>
+            <small className="muted">{tr('Всего:', 'Total:')} {bytes(status.txTotal)}</small>
           </div>
           <div className="traffic-card">
             <span>
-              <Icon name="servers" size={17} /> Потоки
+              <Icon name="servers" size={17} /> {tr('Потоки', 'Streams')}
             </span>
             <strong>{active ? `${status.streams} / ${status.total}` : '—'}</strong>
           </div>
@@ -150,7 +151,7 @@ export default function Connection({
           <Icon name="servers" size={20} />
           <div className="field">
             <label htmlFor="active-profile" className="sr-only">
-              Сервер подключения
+              {tr('Сервер подключения', 'Connection server')}
             </label>
             <select
               id="active-profile"
@@ -158,10 +159,10 @@ export default function Connection({
               onChange={(e) => onSelect(e.target.value)}
               disabled={servers.length === 0}
             >
-              {servers.length === 0 && <option value="">Нет серверов</option>}
+              {servers.length === 0 && <option value="">{tr('Нет серверов', 'No servers')}</option>}
               {servers.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name || s.peer || 'Без имени'}
+                  {s.name || s.peer || tr('Без имени', 'Unnamed')}
                 </option>
               ))}
             </select>
@@ -170,8 +171,8 @@ export default function Connection({
             className="btn icon-button"
             disabled={!selected}
             onClick={onEdit}
-            aria-label="Настроить выбранный сервер"
-            title="Настроить сервер"
+            aria-label={tr('Настроить выбранный сервер', 'Configure selected server')}
+            title={tr('Настроить сервер', 'Configure server')}
           >
             <Icon name="settings" size={18} />
           </button>

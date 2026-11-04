@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/samosvalishe/free-turn-proxy/desktop/locale"
 )
 
 type Preferences struct {
+	Language            string `json:"language"`
 	CloseToTray         bool   `json:"closeToTray"`
 	AutoConnect         bool   `json:"autoConnect"`
 	AutoConnectServerID string `json:"autoConnectServerId"`
@@ -19,7 +23,7 @@ func preferencesPath() (string, error) {
 }
 
 func LoadPreferences() (Preferences, error) {
-	prefs := Preferences{CloseToTray: true, AutoCheckUpdates: true}
+	prefs := Preferences{Language: "system", CloseToTray: true, AutoCheckUpdates: true}
 	path, err := preferencesPath()
 	if err != nil {
 		return prefs, err
@@ -32,7 +36,23 @@ func LoadPreferences() (Preferences, error) {
 		return prefs, err
 	}
 	err = json.Unmarshal(data, &prefs)
+	if !ValidLanguage(prefs.Language) {
+		prefs.Language = "system"
+	}
 	return prefs, err
+}
+
+func ValidLanguage(value string) bool { return value == "system" || locale.Supported(value) }
+
+func SystemLanguage() string {
+	for _, key := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
+		value := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+		if value == "" {
+			continue
+		}
+		return locale.MatchSystemLanguage(value)
+	}
+	return "en"
 }
 
 func SavePreferences(prefs Preferences) error {

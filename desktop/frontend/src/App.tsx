@@ -22,6 +22,7 @@ import {UpdateNotice} from './components/UpdatePreferences'
 import {desktop} from './desktop'
 import {watchStatus} from './status'
 import {EMPTY_TRAFFIC_HISTORY, recordTraffic} from './trafficHistory'
+import {tr} from './language'
 
 const MAX_LOG_LINES = 500
 
@@ -109,7 +110,7 @@ export default function App() {
 
   const selectServer = (id: string) => {
     if (id === selectedId) return
-    if (dirty && !window.confirm('Несохранённые изменения будут потеряны. Продолжить?')) return
+    if (dirty && !window.confirm(tr('Несохранённые изменения будут потеряны. Продолжить?', 'Unsaved changes will be lost. Continue?'))) return
     setSelectedId(id)
     localStorage.setItem('freeturn:selected-server', id)
   }
@@ -123,7 +124,7 @@ export default function App() {
 
   const handleDelete = async () => {
     if (!draft?.id) return
-    if (!window.confirm(`Удалить сервер «${draft.name || draft.peer}»?`)) return
+    if (!window.confirm(tr('Удалить сервер «{name}»?', {name: draft.name || draft.peer}))) return
     await DeleteServer(draft.id)
     setServers((prev) => prev.filter((s) => s.id !== draft.id))
     setSelectedId(null)
@@ -158,7 +159,7 @@ export default function App() {
         {connectError && (
           <div className="app-error notice error" role="alert">
             <span>{connectError}</span>
-            <button className="btn small ghost" onClick={() => setConnectError('')} aria-label="Закрыть сообщение">
+            <button className="btn small ghost" onClick={() => setConnectError('')} aria-label={tr('Закрыть сообщение', 'Dismiss message')}>
               ×
             </button>
           </div>
@@ -183,10 +184,10 @@ export default function App() {
           <section className="logs-page">
             <header className="page-heading">
               <div>
-                <span className="eyebrow">ДИАГНОСТИКА</span>
-                <h1>Журнал событий</h1>
+                <span className="eyebrow">{tr('ДИАГНОСТИКА', 'DIAGNOSTICS')}</span>
+                <h1>{tr('Журнал событий', 'Event log')}</h1>
               </div>
-              <span className="muted">Последние {MAX_LOG_LINES} записей</span>
+              <span className="muted">{tr('Последние {count} записей', {count: MAX_LOG_LINES})}</span>
             </header>
             <LogConsole lines={logs} onClear={() => setLogs([])} />
           </section>
@@ -204,7 +205,7 @@ export default function App() {
             <div className="main">
               {!draft ? (
                 <div className="empty-state">
-                  <p>Выберите сервер слева или добавьте новый, чтобы подключиться через free-turn-proxy.</p>
+                  <p>{tr('Выберите сервер слева или добавьте новый, чтобы подключиться через free-turn-proxy.', 'Select a server on the left or add a new one to connect via free-turn-proxy.')}</p>
                 </div>
               ) : (
                 <ServerDetail

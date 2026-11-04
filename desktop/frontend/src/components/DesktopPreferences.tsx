@@ -4,6 +4,7 @@ import Icon from './Icon'
 import UpdatePreferences from './UpdatePreferences'
 import {ListServers} from '../../wailsjs/go/main/App'
 import {backend} from '../../wailsjs/go/models'
+import {availableLanguages, configureLanguage, tr} from '../language'
 
 export default function DesktopPreferences({version}: {version: string}) {
   const [settings, setSettings] = useState<DesktopSettings | null>(null)
@@ -37,8 +38,8 @@ export default function DesktopPreferences({version}: {version: string}) {
     <section className="settings-page">
       <header className="page-heading">
         <div>
-          <span className="eyebrow">ПРИЛОЖЕНИЕ</span>
-          <h1>Настройки</h1>
+          <span className="eyebrow">{tr('ПРИЛОЖЕНИЕ', 'APPLICATION')}</span>
+          <h1>{tr('Настройки', 'Settings')}</h1>
         </div>
       </header>
       {error && (
@@ -51,17 +52,31 @@ export default function DesktopPreferences({version}: {version: string}) {
           {message}
         </div>
       )}
-      {!settings && !error && <p>Загрузка настроек…</p>}
+      {!settings && !error && <p>{tr('Загрузка настроек…', 'Loading settings…')}</p>}
       {settings && (
         <>
           <div className="settings-card">
             <h2>
-              <Icon name="settings" /> Поведение
+              <Icon name="settings" /> {tr('Поведение', 'Behavior')}
             </h2>
+            <div className="preference-row language-row">
+              <label htmlFor="interface-language"><strong>{tr('Язык / Language', 'Language / Язык')}</strong></label>
+              <select id="interface-language" aria-label={tr('Язык интерфейса', 'Interface language')}
+                value={settings.language || 'system'} disabled={busy} onChange={(event) => {
+                const language = event.target.value
+                run(async () => {
+                  await desktop().SetLanguage(language)
+                  configureLanguage(language, settings.systemLanguage)
+                })
+              }}>
+                <option value="system">{tr('Как в системе', 'System default')}</option>
+                {availableLanguages().map(language => <option key={language.code} value={language.code} lang={language.code}>{language.name}</option>)}
+              </select>
+            </div>
             <label className="preference-row">
               <div>
-                <strong>Запускать вместе с системой</strong>
-                <p>При входе в сеанс Linux. Автоподключение настраивается отдельно ниже.</p>
+                <strong>{tr('Запускать вместе с системой', 'Start at login')}</strong>
+                <p>{tr('При входе в сеанс Linux. Автоподключение настраивается отдельно ниже.', 'When signing in to Linux. Automatic connection is configured separately below.')}</p>
               </div>
               <input
                 type="checkbox"
@@ -73,8 +88,8 @@ export default function DesktopPreferences({version}: {version: string}) {
             </label>
             <label className="preference-row">
               <div>
-                <strong>Подключаться при запуске</strong>
-                <p>Одна попытка при каждом запуске приложения, в том числе вместе с системой.</p>
+                <strong>{tr('Подключаться при запуске', 'Connect on startup')}</strong>
+                <p>{tr('Одна попытка при каждом запуске приложения, в том числе вместе с системой.', 'One attempt on each application launch, including at login.')}</p>
               </div>
               <input
                 type="checkbox"
@@ -87,30 +102,29 @@ export default function DesktopPreferences({version}: {version: string}) {
               />
             </label>
             <label className="field autoconnect-profile">
-              <span>Профиль автоподключения</span>
+              <span>{tr('Профиль автоподключения', 'Startup connection profile')}</span>
               <select
                 value={settings.autoConnectServerId}
                 disabled={busy || !servers.length}
                 onChange={(e) => run(() => desktop().SetAutoConnect(settings.autoConnect, e.target.value))}
               >
-                <option value="" disabled>Выберите профиль</option>
+                <option value="" disabled>{tr('Выберите профиль', 'Select a profile')}</option>
                 {settings.autoConnectServerId && !servers.some((s) => s.id === settings.autoConnectServerId) && (
-                  <option value={settings.autoConnectServerId} disabled>Профиль удалён — выберите другой</option>
+                  <option value={settings.autoConnectServerId} disabled>{tr('Профиль удалён — выберите другой', 'Profile deleted — select another')}</option>
                 )}
                 {servers.map((s) => <option key={s.id} value={s.id}>{s.name || s.id}</option>)}
               </select>
             </label>
             <p className="settings-note">
-              Капча может потребовать ручного ввода.
-              При ошибке повторите подключение вручную.
+              {tr('Капча может потребовать ручного ввода. При ошибке повторите подключение вручную.', 'Captcha may require manual input. If the connection fails, try again manually.')}
             </p>
             {settings.autoConnectError && (
               <div className="notice error" role="alert">{settings.autoConnectError}</div>
             )}
             <label className="preference-row">
               <div>
-                <strong>Сворачивать в трей при закрытии</strong>
-                <p>Закрытие окна не прерывает соединение. Выход — через меню трея.</p>
+                <strong>{tr('Сворачивать в трей при закрытии', 'Minimize to tray on close')}</strong>
+                <p>{tr('Закрытие окна не прерывает соединение. Выход — через меню трея.', 'Closing the window keeps the connection active. Quit using the tray menu.')}</p>
               </div>
               <input
                 type="checkbox"
@@ -122,11 +136,10 @@ export default function DesktopPreferences({version}: {version: string}) {
             </label>
             {!settings.trayAvailable && (
               <div className="notice info">
-                Системный трей недоступен. В GNOME нужно расширение AppIndicator / KStatusNotifierItem. Пока трей
-                недоступен, закрытие окна завершает приложение и VPN.
+                {tr('Системный трей недоступен. В GNOME нужно расширение AppIndicator / KStatusNotifierItem. Пока трей недоступен, закрытие окна завершает приложение и VPN.', 'System tray unavailable. GNOME requires an AppIndicator / KStatusNotifierItem extension. Without a tray, closing the window exits the app and disconnects the VPN.')}
                 {settings.trayError && (
                   <details>
-                    <summary>Подробности</summary>
+                    <summary>{tr('Подробности', 'Details')}</summary>
                     <p className="mono">{settings.trayError}</p>
                   </details>
                 )}
@@ -137,7 +150,7 @@ export default function DesktopPreferences({version}: {version: string}) {
               disabled={busy || !settings.trayAvailable}
               onClick={() => run(() => desktop().MinimiseToTray())}
             >
-              <Icon name="tray" size={17} /> Свернуть в трей
+              <Icon name="tray" size={17} /> {tr('Свернуть в трей', 'Minimize to tray')}
             </button>
           </div>
           <UpdatePreferences autoCheck={settings.autoCheckUpdates} disabled={busy} canInstall={settings.supported}
@@ -147,11 +160,11 @@ export default function DesktopPreferences({version}: {version: string}) {
       <footer className="settings-about">
         <img className="app-icon" src="/freeturn.svg" alt="" width="44" height="44" />
         <div>
-          <strong>FreeTurn для Linux</strong>
+          <strong>{tr('FreeTurn для Linux', 'FreeTurn for Linux')}</strong>
           <p>Core {version || '…'} · Wails + React</p>
         </div>
         <button className="btn danger" onClick={() => run(() => desktop().Quit())}>
-          Выйти из приложения
+          {tr('Выйти из приложения', 'Quit application')}
         </button>
       </footer>
     </section>

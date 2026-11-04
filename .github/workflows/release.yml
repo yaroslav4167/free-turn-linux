@@ -63,6 +63,7 @@ jobs:
           mkdir -p dist/package/desktop/assets dist/package/docs
           cp desktop/assets/icon.svg dist/package/desktop/assets/
           cp -R docs/screenshots dist/package/docs/
+          cp docs/localization.md dist/package/docs/
           cp packaging/linux/install-desktop.sh dist/package/
           cp packaging/linux/uninstall-desktop.sh dist/package/
           chmod +x dist/package/install-desktop.sh dist/package/uninstall-desktop.sh

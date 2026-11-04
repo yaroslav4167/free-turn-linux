@@ -59,6 +59,7 @@ cp desktop/assets/icon.svg "$stage/freeturn.svg"
 mkdir -p "$stage/desktop/assets" "$stage/docs"
 cp desktop/assets/icon.svg "$stage/desktop/assets/"
 cp -R docs/screenshots "$stage/docs/"
+cp docs/localization.md "$stage/docs/"
 archive="FreeTurn-Linux-$arch.tar.gz"
 tar -C "$stage" -czf "dist/$archive" .
 (

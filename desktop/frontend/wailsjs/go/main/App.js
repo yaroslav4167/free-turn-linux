@@ -150,6 +150,10 @@ export function SetCloseToTray(arg1) {
   return window['go']['main']['App']['SetCloseToTray'](arg1);
 }
 
+export function SetLanguage(arg1) {
+  return window['go']['main']['App']['SetLanguage'](arg1);
+}
+
 export function SetupCreateServer(arg1, arg2, arg3) {
   return window['go']['main']['App']['SetupCreateServer'](arg1, arg2, arg3);
 }

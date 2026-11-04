@@ -1,11 +1,11 @@
-const labels: Record<string, string> = {
-  idle: 'Отключено',
-  connecting: 'Подключение…',
-  captcha: 'Требуется проверка',
-  error: 'Не удалось подключиться',
-}
 
 export function connectionState(state: string, pending: boolean, vpn: boolean) {
+  const labels: Record<string, string> = {
+    idle: tr('Отключено', 'Disconnected'),
+    connecting: tr('Подключение…', 'Connecting…'),
+    captcha: tr('Требуется проверка', 'Verification required'),
+    error: tr('Не удалось подключиться', 'Connection failed'),
+  }
   const active = state !== 'idle' && state !== 'error'
   const connected = state === 'connected' && !pending
   const visualState = pending && state !== 'captcha' && state !== 'error' ? 'connecting' : state
@@ -14,14 +14,15 @@ export function connectionState(state: string, pending: boolean, vpn: boolean) {
     connected,
     visualState,
     busy: visualState === 'connecting',
-    heading: connected ? (vpn ? 'VPN включён' : 'Реле запущено') : (labels[visualState] ?? visualState),
-    action: connected ? 'Отключить' : active ? 'Отменить' : 'Подключить',
+    heading: connected ? (vpn ? tr('VPN включён', 'VPN enabled') : tr('Реле запущено', 'Relay running')) : (labels[visualState] ?? visualState),
+    action: connected ? tr('Отключить', 'Disconnect') : active ? tr('Отменить', 'Cancel') : tr('Подключить', 'Connect'),
     ariaLabel: connected
       ? vpn
-        ? 'Отключить VPN'
-        : 'Остановить реле'
+        ? tr('Отключить VPN', 'Disconnect VPN')
+        : tr('Остановить реле', 'Stop relay')
       : active
-        ? 'Отменить подключение'
-        : 'Подключиться',
+        ? tr('Отменить подключение', 'Cancel connection')
+        : tr('Подключиться', 'Connect'),
   }
 }
+import {tr} from './language.ts'

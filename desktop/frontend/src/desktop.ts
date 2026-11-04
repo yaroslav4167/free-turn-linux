@@ -1,5 +1,7 @@
 // Kept separate from generated bindings so Wails can regenerate them freely.
 export interface DesktopSettings {
+  language: string
+  systemLanguage: string
   closeToTray: boolean
   autostart: boolean
   autoConnect: boolean
@@ -15,6 +17,7 @@ export interface DesktopSettings {
 }
 
 interface DesktopAPI {
+  SetLanguage(language: string): Promise<void>
   UpdateState(): Promise<UpdateState>
   CheckForUpdates(): Promise<void>
   DownloadUpdate(): Promise<void>
