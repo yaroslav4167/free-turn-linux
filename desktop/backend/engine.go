@@ -112,13 +112,9 @@ func (e *Engine) Connect(srv Server) error {
 	var routeOverride string
 	var exclusions []string
 	if vpn {
-		if srv.SSH != nil && srv.SSH.IP != "" {
-			exclusions = append(exclusions, srv.SSH.IP)
-		}
-		if host, _, splitErr := net.SplitHostPort(srv.Peer); splitErr == nil && net.ParseIP(host) != nil {
-			if srv.SSH == nil || host != srv.SSH.IP {
-				exclusions = append(exclusions, host)
-			}
+		exclusions, err = resolveExclusions(ctx, srv, net.DefaultResolver)
+		if err != nil {
+			return fmt.Errorf("VPN endpoints: %w", err)
 		}
 		params, parseErr := mobile.ParseTunnelConfig(srv.WgClientConf, DefaultTunnelMTU)
 		if parseErr != nil {

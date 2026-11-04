@@ -2,6 +2,11 @@
   "code": "en",
   "name": "English",
   "messages": {
+    "Клиентский конфиг WireGuard/AmneziaWG (для режима VPN)": "WireGuard/AmneziaWG client configuration (for VPN mode)",
+    "Обнаружен установленный сервер. Повторная установка и перенастройка отключены.": "An existing server was detected. Reinstallation and reconfiguration are disabled.",
+    "Укажите параметры существующего подключения и его клиентский конфиг. Сохранение добавит только локальный профиль: настройки сервера и список клиентов не изменятся.": "Enter the existing connection settings and its client configuration. Saving only adds a local profile: server settings and authorized clients will not change.",
+    "Запущен": "Running",
+    "Остановлен": "Stopped",
     "Соединение работает. Для части потоков требуется проверка VK.": "The connection is active. Some streams require VK verification.",
     "Для подключения требуется проверка VK в браузере.": "VK verification in the browser is required to connect.",
     "О режимах списков маршрутизации": "About routing list modes",

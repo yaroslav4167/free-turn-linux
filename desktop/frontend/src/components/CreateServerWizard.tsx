@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react'
 import {tr} from '../language'
+import ServerForm from './ServerForm'
 import {
   backend,
   EventsOn,
@@ -13,13 +14,15 @@ import {
   SetupProbe,
   SetupStart,
   SetupWgSetup,
+  NewServer,
+  SaveServer,
 } from '../api'
 
 interface Props {
   onCreated: (s: backend.Server) => void
 }
 
-type Step = 'ssh' | 'config' | 'progress' | 'done'
+type Step = 'ssh' | 'existing' | 'config' | 'progress' | 'done'
 type TaskState = 'pending' | 'running' | 'done' | 'error'
 
 
@@ -47,6 +50,8 @@ export default function CreateServerWizard({onCreated}: Props) {
   const [ssh, setSsh] = useState<serversetup.SSHConfig>(newSshDraft())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [existing, setExisting] = useState<serversetup.ProbeResult | null>(null)
+  const [existingDraft, setExistingDraft] = useState<backend.Server | null>(null)
 
   const [name, setName] = useState('')
   const [vkLink, setVkLink] = useState('')
@@ -78,6 +83,16 @@ export default function CreateServerWizard({onCreated}: Props) {
       const probe = await SetupProbe(withRoot)
       const pinned: serversetup.SSHConfig = {...withRoot, hostFingerprint: probe.hostFingerprint || withRoot.hostFingerprint}
       setSsh(pinned)
+      setExisting(probe)
+      setWgPortExisting(probe.wgPort > 0)
+      if (probe.installed || probe.running) {
+        const draft = await NewServer()
+        draft.name = ssh.ip
+        // Do not attach SSH management to an unknown installation layout.
+        setExistingDraft(draft)
+        setStep('existing')
+        return
+      }
       if (probe.wgPort > 0) {
         setWgPort(probe.wgPort)
         setWgPortExisting(true)
@@ -94,6 +109,7 @@ export default function CreateServerWizard({onCreated}: Props) {
   }
 
   const runProvision = async () => {
+    if (existing?.installed || existing?.running) return
     setStep('progress')
     setError('')
     setProgressLines([])
@@ -108,6 +124,14 @@ export default function CreateServerWizard({onCreated}: Props) {
 
     try {
       mark('install', 'running')
+      // Recheck just before the first remote mutation (also on retries).
+      const fresh = await SetupProbe(ssh)
+      if (fresh.installed || fresh.running) {
+        setExisting(fresh)
+        setExistingDraft(await NewServer())
+        setStep('existing')
+        return
+      }
       await SetupInstall(ssh)
       mark('install', 'done')
 
@@ -217,6 +241,36 @@ export default function CreateServerWizard({onCreated}: Props) {
         </div>
       </>
     )
+  }
+
+  if (step === 'existing') {
+    return <>
+      <div className="notice info">
+        {tr('Обнаружен установленный сервер. Повторная установка и перенастройка отключены.', 'An existing server was detected. Reinstallation and reconfiguration are disabled.')}
+        {' '}{existing?.existingService} {existing?.version}
+        {' · '}{existing?.running ? tr('Запущен', 'Running') : tr('Остановлен', 'Stopped')}
+      </div>
+      <p>{tr('Укажите параметры существующего подключения и его клиентский конфиг. Сохранение добавит только локальный профиль: настройки сервера и список клиентов не изменятся.', 'Enter the existing connection settings and its client configuration. Saving only adds a local profile: server settings and authorized clients will not change.')}</p>
+      {error && <div className="notice error">{error}</div>}
+      {existingDraft && <ServerForm value={existingDraft} onChange={setExistingDraft} />}
+      {existingDraft && <div className="field">
+        <label>{tr('Клиентский конфиг WireGuard/AmneziaWG (для режима VPN)', 'WireGuard/AmneziaWG client configuration (for VPN mode)')}</label>
+        <textarea value={existingDraft.wgClientConf || ''} onChange={e => setExistingDraft({
+          ...existingDraft, wgClientConf: e.target.value, connMode: e.target.value.trim() ? 'vpn' : 'relay',
+        } as backend.Server)} placeholder="[Interface]" />
+      </div>}
+      <div className="modal-actions">
+        <button className="btn" disabled={busy} onClick={() => setStep('ssh')}>{tr('Назад', 'Back')}</button>
+        <button className="btn primary" disabled={busy || !existingDraft?.peer} onClick={async () => {
+          if (!existingDraft) return
+          setBusy(true)
+          setError('')
+          try { onCreated(await SaveServer(existingDraft)) }
+          catch (e) { setError(String(e)) }
+          finally { setBusy(false) }
+        }}>{tr('Сохранить', 'Save')}</button>
+      </div>
+    </>
   }
 
   if (step === 'config') {
