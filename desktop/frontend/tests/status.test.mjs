@@ -139,3 +139,16 @@ test('ignores an in-flight response after disposal', async (t) => {
   await setImmediate()
   assert.equal(monitor.values.length, 0)
 })
+
+test('pending captcha is recovered from snapshots without marking working streams disconnected', async (t) => {
+  const monitor = setup(t, async () => snapshot({streams: 1, total: 2, captchaUrl: 'http://localhost:8765', rxRate: 2048}))
+  await setImmediate()
+  const current = monitor.values.at(-1)
+  assert.equal(current.state, 'connected')
+  assert.equal(current.captchaUrl, 'http://localhost:8765')
+  assert.equal(current.rxRate, 2048)
+  monitor.emitSnapshot(snapshot({streams: 1, total: 2, captchaUrl: '', rxRate: 4096}))
+  assert.equal(monitor.values.at(-1).captchaUrl, '')
+  assert.equal(monitor.values.at(-1).state, 'connected')
+  assert.equal(monitor.values.at(-1).rxRate, 4096)
+})

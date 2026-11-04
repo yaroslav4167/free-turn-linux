@@ -1,4 +1,4 @@
-import {backend, BrowserOpenURL} from '../api'
+import {backend} from '../api'
 import Icon from './Icon'
 import TrafficSparkline from './TrafficSparkline'
 import type {TrafficHistory} from '../trafficHistory'
@@ -27,7 +27,6 @@ interface Props {
   servers: backend.Server[]
   selected: backend.Server | null
   status: backend.Status
-  captchaUrl: string
   pending: boolean
   trafficHistory: TrafficHistory
   onSelect: (id: string) => void
@@ -41,7 +40,6 @@ export default function Connection({
   servers,
   selected,
   status,
-  captchaUrl,
   pending,
   trafficHistory,
   onSelect,
@@ -55,6 +53,7 @@ export default function Connection({
   const vpn = (active ? activeServer : selected)?.connMode === 'vpn'
   const presentation = connectionState(status.state, pending, vpn)
   const connected = presentation.connected
+  const verificationRequired = connected && !!status.captchaUrl
   const ping = useServerPing(status.serverId, connected)
   const motion = usePowerMotion(connected, presentation.busy)
   const powerShape = useMemo(() => powerShapeAt(motion.morph), [motion.morph])
@@ -70,7 +69,7 @@ export default function Connection({
           <Icon name="plus" size={22} />
         </button>
       </header>
-      <div className={'connection-center ' + presentation.visualState}>
+      <div className={'connection-center ' + presentation.visualState + (verificationRequired ? ' verification-required' : '')}>
         <span className={'mode-badge' + (connected ? ' is-connected' : '')}>
           {connected ? <span className="connection-indicator" aria-hidden="true" /> : <Icon name="shield" size={14} />}
           {connected ? tr('Соединение активно', 'Connection active') : vpn ? selected?.routingLists?.some((list) => list.enabled) ? tr('VPN · списки маршрутизации', 'VPN · routing lists') : tr('VPN · маршруты профиля', 'VPN · profile routes') : tr('TURN · режим реле', 'TURN · relay mode')}
@@ -82,6 +81,7 @@ export default function Connection({
           aria-label={presentation.ariaLabel}
           aria-busy={presentation.busy}
           aria-pressed={connected}
+          aria-describedby={verificationRequired ? 'captcha-notice' : undefined}
         >
           <svg className="power-outline" style={contourStyle} viewBox="0 0 150 150" aria-hidden="true" focusable="false">
             <path d={powerShape} />
@@ -111,11 +111,6 @@ export default function Connection({
               ? tr('Нажмите, чтобы подключиться к выбранному серверу', 'Click to connect to the selected server')
               : tr('Добавьте первый сервер, чтобы начать', 'Add your first server to get started')}
         </p>
-        {status.state === 'captcha' && captchaUrl && (
-          <button className="btn primary" onClick={() => BrowserOpenURL(captchaUrl)}>
-            {tr('Открыть проверку в браузере', 'Open verification in browser')}
-          </button>
-        )}
         {status.state === 'error' && status.errMsg && (
           <div className="notice error connection-error">{status.errMsg}</div>
         )}

@@ -43,8 +43,9 @@ jobs:
           npm test
       - name: Check Go packages
         run: |
-          go test ./desktop/...
-          go vet ./desktop/...
+          go test ./desktop/... ./internal/session ./mobile
+          go test -race ./internal/session ./mobile ./desktop/backend
+          go vet ./desktop/... ./internal/session ./mobile
       - name: Upload Linux download
         uses: actions/upload-artifact@v7.0.2
         with:

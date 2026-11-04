@@ -2,6 +2,8 @@
   "code": "en",
   "name": "English",
   "messages": {
+    "Соединение работает. Для части потоков требуется проверка VK.": "The connection is active. Some streams require VK verification.",
+    "Для подключения требуется проверка VK в браузере.": "VK verification in the browser is required to connect.",
     "О режимах списков маршрутизации": "About routing list modes",
     "Об ограничениях маршрутизации": "About routing limitations",
     "Пинг": "Ping",

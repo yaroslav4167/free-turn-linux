@@ -17,15 +17,16 @@ import (
 
 // Status is a UI-friendly snapshot of the running (or last) session.
 type Status struct {
-	State    string `json:"state"` // idle | connecting | connected | captcha | error
-	Streams  int    `json:"streams"`
-	Total    int    `json:"total"`
-	ErrMsg   string `json:"errMsg"`
-	TxRate   int64  `json:"txRate"`
-	RxRate   int64  `json:"rxRate"`
-	TxTotal  int64  `json:"txTotal"`
-	RxTotal  int64  `json:"rxTotal"`
-	ServerID string `json:"serverId"`
+	State      string `json:"state"` // idle | connecting | connected | captcha | error
+	Streams    int    `json:"streams"`
+	Total      int    `json:"total"`
+	ErrMsg     string `json:"errMsg"`
+	TxRate     int64  `json:"txRate"`
+	RxRate     int64  `json:"rxRate"`
+	TxTotal    int64  `json:"txTotal"`
+	RxTotal    int64  `json:"rxTotal"`
+	ServerID   string `json:"serverId"`
+	CaptchaURL string `json:"captchaUrl"`
 }
 
 // LogLine is pushed to the frontend over the "core:log" event as the session runs.
@@ -182,10 +183,14 @@ func (e *Engine) Status() Status {
 		e.traffic = trafficMeter{}
 		txRate, rxRate = 0, 0
 	}
+	captchaURL := e.captchaURL
+	if snap.State == mobile.StateIdle || snap.State == mobile.StateError {
+		captchaURL = ""
+	}
 	return Status{
 		State: snap.State, Streams: snap.Streams, Total: snap.Total, ErrMsg: snap.ErrMsg,
 		TxRate: txRate, RxRate: rxRate, TxTotal: snap.TxTotal, RxTotal: snap.RxTotal,
-		ServerID: serverID,
+		ServerID: serverID, CaptchaURL: captchaURL,
 	}
 }
 
@@ -217,8 +222,9 @@ func (e *Engine) OnState(state string, streams, total int, errMsg string) {
 	}
 	e.mu.Lock()
 	serverID := e.serverID
+	captchaURL := e.captchaURL
 	e.mu.Unlock()
-	wailsruntime.EventsEmit(e.ctx, eventState, Status{State: state, Streams: streams, Total: total, ErrMsg: errMsg, ServerID: serverID})
+	wailsruntime.EventsEmit(e.ctx, eventState, Status{State: state, Streams: streams, Total: total, ErrMsg: errMsg, ServerID: serverID, CaptchaURL: captchaURL})
 }
 
 func (e *Engine) OnLog(level, msg string, unixMillis int64) {
@@ -229,13 +235,16 @@ func (e *Engine) OnLog(level, msg string, unixMillis int64) {
 }
 
 func (e *Engine) OnCaptcha(url string) {
-	if e.ctx == nil {
-		return
-	}
 	e.mu.Lock()
 	e.captchaURL = url
 	e.mu.Unlock()
+	if e.ctx == nil {
+		return
+	}
 	wailsruntime.EventsEmit(e.ctx, eventCaptcha, url)
+	// Persist in every snapshot and push immediately. Captcha can coexist with
+	// connected streams, and a newly mounted frontend may miss the one-shot event.
+	wailsruntime.EventsEmit(e.ctx, eventStats, e.Status())
 	if url != "" {
 		go func() {
 			_ = notify.ShowCaptchaNotification(url, func() {

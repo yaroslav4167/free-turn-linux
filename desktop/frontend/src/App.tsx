@@ -23,6 +23,7 @@ import {desktop} from './desktop'
 import {watchStatus} from './status'
 import {EMPTY_TRAFFIC_HISTORY, recordTraffic} from './trafficHistory'
 import {tr} from './language'
+import CaptchaNotice from './components/CaptchaNotice'
 
 const MAX_LOG_LINES = 500
 
@@ -36,6 +37,7 @@ const IDLE_STATUS: backend.Status = {
   txTotal: 0,
   rxTotal: 0,
   serverId: '',
+  captchaUrl: '',
 }
 
 function sameServer(a: backend.Server | null, b: backend.Server | null): boolean {
@@ -50,7 +52,6 @@ export default function App() {
   const [draft, setDraft] = useState<backend.Server | null>(null)
   const [status, setStatus] = useState<backend.Status>(IDLE_STATUS)
   const [logs, setLogs] = useState<LogEntry[]>([])
-  const [captchaUrl, setCaptchaUrl] = useState('')
   const [version, setVersion] = useState('')
   const [connectError, setConnectError] = useState('')
   const [showAdd, setShowAdd] = useState(false)
@@ -90,11 +91,9 @@ export default function App() {
         return next.length > MAX_LOG_LINES ? next.slice(next.length - MAX_LOG_LINES) : next
       }),
     )
-    const offCaptcha = EventsOn('core:captcha', (url: string) => setCaptchaUrl(url))
     return () => {
       offState()
       offLog()
-      offCaptcha()
       EventsOff('core:state', 'core:stats', 'core:log', 'core:captcha')
     }
   }, [])
@@ -155,6 +154,7 @@ export default function App() {
     <div className="app-shell">
       <Navigation view={view} onChange={setView} version={version} />
       <main className="workspace">
+        <CaptchaNotice url={status.captchaUrl || ''} connected={status.state === 'connected' && !pending} />
         {view !== 'settings' && <UpdateNotice onOpen={() => setView('settings')} />}
         {connectError && (
           <div className="app-error notice error" role="alert">
@@ -169,7 +169,6 @@ export default function App() {
             servers={servers}
             selected={savedSelected}
             status={status}
-            captchaUrl={captchaUrl}
             pending={pending}
             trafficHistory={trafficHistory}
             onSelect={selectServer}
@@ -213,7 +212,6 @@ export default function App() {
                   dirty={dirty}
                   status={status}
                   isActive={status.serverId === draft.id}
-                  captchaUrl={captchaUrl}
                   logs={logs}
                   onChange={setDraft}
                   onSave={() => {

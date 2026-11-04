@@ -1348,3 +1348,25 @@ button:disabled {
 .connection-ping .info-tip-button { font-size: 11px; padding: 0 2px; }
 .routing-list-heading { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
 .routing-list-heading h3 { margin: 0; }
+.verification-required .power-button {
+  --power-fill: #493f26;
+  --power-border: #d5b35b;
+  color: #ffe6a3;
+}
+.verification-required .power-button:hover:not(:disabled) { --power-border: #ffe6a3; }
+.verification-required .mode-badge {
+  background: #493f26;
+  border-color: #8b763e;
+  color: #ffe6a3;
+}
+.verification-required .connection-indicator { background: #e5b93a; }
+.notice.captcha-notice {
+  background: #302a1d;
+  color: #ffe6a3;
+  border-color: #8b763e;
+}
+.captcha-notice .btn {
+  background: #ffe6a3;
+  border-color: #d5b35b;
+  color: #302a1d;
+}

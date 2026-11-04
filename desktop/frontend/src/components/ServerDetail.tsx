@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {backend, BrowserOpenURL, ConfigCommand} from '../api'
+import {backend, ConfigCommand} from '../api'
 import ServerForm from './ServerForm'
 import ServerManagement from './ServerManagement'
 import PeersPanel from './PeersPanel'
@@ -13,7 +13,6 @@ interface Props {
   dirty: boolean
   status: backend.Status
   isActive: boolean
-  captchaUrl: string
   logs: LogEntry[]
   onChange: (s: backend.Server) => void
   onSave: () => void
@@ -28,7 +27,6 @@ export default function ServerDetail({
   dirty,
   status,
   isActive,
-  captchaUrl,
   logs,
   onChange,
   onSave,
@@ -113,15 +111,6 @@ export default function ServerDetail({
           </div>
         )}
         {isActive && state === 'error' && status.errMsg && <div className="notice error">{status.errMsg}</div>}
-        {isActive && state === 'captcha' && (
-          <div className="notice info">
-            {tr('VK запросил проверку.', 'VK requested verification.')} {captchaUrl && (
-              <button className="btn small" onClick={() => BrowserOpenURL(captchaUrl)}>
-                {tr('Открыть captcha в браузере', 'Open captcha in browser')}
-              </button>
-            )}
-          </div>
-        )}
         {isActive && state === 'connected' && isVPN && (
           <div className="notice info">{tr('VPN включён через', 'VPN enabled via')} {server.peer}{server.routingLists?.some((list) => list.enabled) ? tr(' · применены списки маршрутизации', ' · routing lists applied') : ''}.</div>
         )}

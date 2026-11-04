@@ -241,6 +241,7 @@ export namespace backend {
 		}
 	}
 	export class Status {
+	    captchaUrl: string;
 	    state: string;
 	    streams: number;
 	    total: number;
@@ -258,6 +259,7 @@ export namespace backend {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.state = source["state"];
+	        this.captchaUrl = source["captchaUrl"];
 	        this.streams = source["streams"];
 	        this.total = source["total"];
 	        this.errMsg = source["errMsg"];
