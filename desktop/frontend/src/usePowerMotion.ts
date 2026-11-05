@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react'
-import {advancePowerMotion, PowerMotion} from './powerMotion'
+import {advancePowerMotion, type PowerMotion} from './powerMotion'
 
 export function usePowerMotion(connected: boolean, busy: boolean) {
   const [motion, setMotion] = useState<PowerMotion>({morph: connected ? 1 : 0, morphVelocity: 0, angle: 0, speed: 0})

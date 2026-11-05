@@ -1,4 +1,5 @@
-import {useEffect, useMemo, useState} from 'react'
+import {useEffect, useMemo, useRef, useState} from 'react'
+import {createPortal} from 'react-dom'
 import {
   backend,
   Connect,
@@ -54,8 +55,10 @@ export default function App() {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [version, setVersion] = useState('')
   const [connectError, setConnectError] = useState('')
+  const connectionRequest = useRef(0)
   const [showAdd, setShowAdd] = useState(false)
   const [view, setView] = useState<View>('connect')
+  const [settingsOpened, setSettingsOpened] = useState(false)
   const [pending, setPending] = useState(false)
   const [trafficHistory, setTrafficHistory] = useState(EMPTY_TRAFFIC_HISTORY)
 
@@ -131,6 +134,7 @@ export default function App() {
 
   const handleConnect = async () => {
     if (!draft || pending) return
+    const request = ++connectionRequest.current
     setConnectError('')
     setPending(true)
     try {
@@ -140,30 +144,39 @@ export default function App() {
       // orchestrate a separate Disconnect from here.
       await Connect(draft.id)
     } catch (e) {
-      setConnectError(String(e))
+      if (request === connectionRequest.current) setConnectError(String(e))
     } finally {
-      setPending(false)
+      if (request === connectionRequest.current) setPending(false)
     }
   }
 
   const handleDisconnect = () => {
-    Disconnect().catch((e) => setConnectError(String(e)))
+    connectionRequest.current++
+    setPending(false)
+    void Disconnect().catch(e => setConnectError(String(e)))
+  }
+
+  const changeView = (next: View) => {
+    if (next === 'settings') setSettingsOpened(true)
+    setView(next)
   }
 
   return (
     <div className="app-shell">
-      <Navigation view={view} onChange={setView} version={version} />
+      <Navigation view={view} onChange={changeView} version={version} />
       <main className="workspace">
-        <CaptchaNotice url={status.captchaUrl || ''} connected={status.state === 'connected' && !pending} />
-        {view !== 'settings' && <UpdateNotice onOpen={() => setView('settings')} />}
-        {connectError && (
-          <div className="app-error notice error" role="alert">
-            <span>{connectError}</span>
-            <button className="btn small ghost" onClick={() => setConnectError('')} aria-label={tr('Закрыть сообщение', 'Dismiss message')}>
-              ×
-            </button>
-          </div>
-        )}
+        {createPortal(<div className="notification-stack">
+          <CaptchaNotice url={status.captchaUrl || ''} connected={status.state === 'connected' && !pending} />
+          {view !== 'settings' && <UpdateNotice onOpen={() => changeView('settings')} />}
+          {connectError && (
+            <div className="app-error notice error" role="alert">
+              <span>{connectError}</span>
+              <button className="btn small ghost" onClick={() => setConnectError('')} aria-label={tr('Закрыть сообщение', 'Dismiss message')}>
+                ×
+              </button>
+            </div>
+          )}
+        </div>, document.body)}
         {view === 'connect' && (
           <Connection
             servers={servers}
@@ -178,7 +191,7 @@ export default function App() {
             onEdit={() => setView('servers')}
           />
         )}
-        {view === 'settings' && <DesktopPreferences version={version} />}
+        {settingsOpened && <DesktopPreferences version={version} active={view === 'settings'} servers={servers} />}
         {view === 'logs' && (
           <section className="logs-page">
             <header className="page-heading">

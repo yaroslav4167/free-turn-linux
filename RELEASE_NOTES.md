@@ -1,3 +1,15 @@
+# Release Notes v2.6.5
+
+## Linux desktop UI
+
+* Port shared desktop UI changes from Windows commit `408dd6b4d69dbc61b6faecb9655a86a87ba5d457` while preserving Linux installation, autostart, tray guidance and VPN implementation.
+* Show captcha, update and connection error notifications in a centered overlay above the interface without shifting page content. Long notices scroll and their actions remain clickable.
+* Preserve settings state when switching pages, keep the profile list current and pause frequent update polling while settings are hidden.
+* Compact the connection screen in short windows and ignore stale connection results after cancellation.
+* Carry notification, settings navigation and layout regression checks to Linux.
+
+---
+
 # Release Notes v1.0.3
 
 ## Что нового в версии v1.0.3

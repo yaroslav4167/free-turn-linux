@@ -867,8 +867,35 @@ button:disabled {
   padding: 0;
   border-radius: 12px;
 }
+.notification-stack {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: none;
+}
+.notification-stack > .notice {
+  pointer-events: auto;
+}
+.notification-stack > .notice.error {
+  background: #2d1c22;
+}
+.notification-stack > .notice.info:not(.captcha-notice) {
+  background: #1b263c;
+}
+.settings-page[hidden] {
+  display: none;
+}
 .app-error {
-  margin: 14px 20px 0;
+  margin: 0;
   display: flex;
   gap: 10px;
   align-items: center;
@@ -1059,6 +1086,17 @@ button:disabled {
   .workspace > .connection-page { padding-top: 16px; padding-bottom: 16px; }
   .connection-center { padding: 8px 0 12px; }
   .power-button { margin-top: 14px; }
+}
+/* Desktop decorations/font metrics can leave less than 600 CSS px inside a
+   900x600 window. Compact spacing, not overflow: hidden: long errors and captcha
+   notices must still be reachable by scrolling when they genuinely need it. */
+@media (max-height: 600px) {
+  .workspace > .connection-page { padding-top: 10px; padding-bottom: 10px; }
+  .connection-center { min-height: 0; padding: 4px 0 8px; }
+  .connection-center .power-button { height: 178px; margin: 8px 0 4px; }
+  .connection-center .power-action { top: 158px; }
+  .connection-bottom .traffic-card { padding-top: 12px; padding-bottom: 12px; }
+  .connection-bottom .profile-picker { margin-top: 12px; padding-top: 8px; padding-bottom: 8px; }
 }
 .traffic-grid {
   display: grid;
