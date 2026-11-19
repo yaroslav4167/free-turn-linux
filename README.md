@@ -1,3 +1,8 @@
+> **Development moved to [FreeTurn Desktop](https://github.com/yaroslav4167/free-turn-desktop).**
+> Update directly to **v3.0.0** from your existing client; no intermediate version is required.
+> These are the same verified v3.0.0 binaries, already configured to get future updates from the unified repository.
+> Profiles and settings are preserved. [Direct-update release](releases/tag/v3.0.0).
+
 # FreeTurn for Linux
 
 Графический клиент [free-turn-proxy](https://github.com/purkalolka/free-turn-proxy) для Linux на Go, Wails 2 и React. Клиент поддерживает реле для внешнего WireGuard/AmneziaWG и встроенный VPN одной кнопкой.
