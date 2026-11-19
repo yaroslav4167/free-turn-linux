@@ -46,7 +46,7 @@ jobs:
         working-directory: desktop
         env:
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
-          UPDATE_REPOSITORY: ${{ github.repository }}
+          UPDATE_REPOSITORY: yaroslav4167/free-turn-desktop
         run: $(go env GOPATH)/bin/wails build -tags webkit2_41 -ldflags "-checklinkname=0 -s -w -X main.desktopVersion=${RELEASE_TAG} -X main.updateRepository=${UPDATE_REPOSITORY}" -trimpath
 
       - name: Package Linux release
@@ -73,6 +73,12 @@ jobs:
           cd dist
           sha256sum "FreeTurn-Linux-amd64-${RELEASE_TAG}.tar.gz" > checksums.txt
 
+      - name: Validate migration build before publishing
+        run: |
+          npm --prefix desktop/frontend test
+          go test -tags webkit2_41 ./desktop/... ./internal/session ./mobile
+          go test -race ./internal/session ./mobile ./desktop/backend
+
       - uses: softprops/action-gh-release@v3.0.3
         with:
           tag_name: ${{ inputs.tag || github.ref_name }}
@@ -80,4 +86,4 @@ jobs:
           files: |
             dist/*.tar.gz
             dist/checksums.txt
-          generate_release_notes: true
+          body_path: MIGRATION_RELEASE.md

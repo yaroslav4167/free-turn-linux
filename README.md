@@ -2,6 +2,10 @@
 
 # FreeTurn for Linux
 
+> Разработка перенесена в [FreeTurn Desktop](https://github.com/yaroslav4167/free-turn-desktop).
+> Установите переходное обновление **v2.6.6**, затем проверьте обновления ещё раз.
+> Профили и настройки сохраняются. [Подробнее](MIGRATION_RELEASE.md).
+
 Графический клиент [free-turn-proxy](https://github.com/purkalolka/free-turn-proxy) для Linux на Go, Wails 2 и React. Клиент поддерживает реле для внешнего WireGuard/AmneziaWG и встроенный VPN одной кнопкой.
 
 ## Интерфейс
